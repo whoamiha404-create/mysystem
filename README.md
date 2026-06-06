@@ -1,176 +1,138 @@
-# 🏠 RentPro v3 — Full-Stack Property Management
+# RentPro / HopeZone
 
-A complete, production-ready rental management system with WhatsApp integration.
+Full-stack real estate management system with tenants, payments, receipts, contracts, ankets, reports, users, settings, and WhatsApp integration.
 
 ## Stack
 
-| Layer    | Technology              |
-|----------|-------------------------|
-| Frontend | React 18 + Vite         |
-| Backend  | Node.js + Express       |
-| Database | SQLite (better-sqlite3) |
-| Auth     | JWT + bcrypt            |
-| WhatsApp | whatsapp-web.js         |
-
----
+- Frontend: React 18 + Vite
+- Backend: Node.js + Express
+- Database: SQLite with `better-sqlite3`
+- Auth: JWT + bcrypt
+- WhatsApp: `whatsapp-web.js`
 
 ## Project Structure
 
-```
-RentPro-v3/
-├── backend/
-│   ├── server.js          ← Main API server (port 3001)
-│   ├── db/
-│   │   └── database.js    ← SQLite schema + seeding
-│   ├── middleware/
-│   │   └── auth.js        ← JWT middleware
-│   ├── routes/
-│   │   ├── auth.js        ← Login / password
-│   │   ├── tenants.js     ← CRUD tenants
-│   │   ├── payments.js    ← CRUD payments
-│   │   ├── expenses.js    ← CRUD expenses
-│   │   ├── users.js       ← CRUD users (admin only)
-│   │   ├── settings.js    ← App settings
-│   │   ├── whatsapp.js    ← WA send + remind
-│   │   └── logs.js        ← Activity logs
-│   └── services/
-│       └── whatsapp.js    ← WhatsApp client service
-└── frontend/
-    ├── index.html         ← FONT import is here ← ← ←
-    └── src/
-        ├── styles/
-        │   └── globals.css ← FONT VARIABLES are here ← ← ←
-        ├── pages/          ← One file per page
-        └── components/     ← Reusable components
+```text
+backend/
+  db/database.js          SQLite schema, migrations, seed users
+  middleware/auth.js      JWT auth middleware
+  routes/                 API routes
+  services/whatsapp.js    Per-user WhatsApp sessions
+  server.js               Express server
+
+frontend/
+  src/                    React app source
+  public/                 Static fonts/images
+  vite.config.js          Builds into backend/public
 ```
 
----
+## Roles
 
-## 🔤 How to Change the Font
+- `developer`: system-level account. Can create owners/admins and agents.
+- `admin`: owner/company account. Can create and manage their own agents and view agent reports.
+- `agent`: normal user. Can manage their own tenants, payments, receipts, contracts, ankets, WhatsApp, and settings.
 
-**Step 1** — Go to https://fonts.google.com and pick fonts you like
+Each account has separated workspace data. Tenants, payments, contracts, receipts, expenses, settings, logs, and WhatsApp sessions are scoped to the logged-in user.
 
-**Step 2** — Open `frontend/index.html` and replace the Google Fonts `<link>` tag:
-```html
-<!-- Change THIS line in index.html -->
-<link href="https://fonts.googleapis.com/css2?family=YOUR+FONT:wght@400;700&display=swap" rel="stylesheet" />
-```
+## Local Setup
 
-**Step 3** — Open `frontend/src/styles/globals.css` and update these two lines at the top:
-```css
---font-display : 'Your Display Font', serif;   /* Headings, titles */
---font-body    : 'Your Body Font', sans-serif;  /* All body text   */
-```
+Use Node.js 20 LTS. Node 24 can break native SQLite packages on Windows.
 
-**Step 4** — Change font sizes if needed (same file):
-```css
---text-base : 15px;   /* ← Main body font size — increase to 16px or 17px */
-```
+### Backend
 
----
-
-## ⚡ Quick Start (Development)
-
-### 1. Install Chrome for WhatsApp (once only)
-```bash
+```bat
 cd backend
+copy .env.example .env
 npm install
-npx puppeteer browsers install chrome
-```
-
-### 2. Setup backend
-```bash
-cd backend
-cp .env.example .env
-# Edit .env to change secrets/credentials
 npm start
-# API running at http://localhost:3001
 ```
 
-### 3. Setup frontend
-```bash
+Backend runs on:
+
+```text
+http://localhost:3001
+```
+
+### Frontend
+
+Open a second terminal:
+
+```bat
 cd frontend
 npm install
 npm run dev
-# App running at http://localhost:5173
 ```
 
-Default login: **admin / admin123**
+Frontend runs on:
 
----
-
-## 🚀 VPS Deployment
-
-### Backend (PM2)
-```bash
-cd /your/path/backend
-npm install
-npx puppeteer browsers install chrome
-
-# Install system libs if needed (Ubuntu)
-apt-get install -y libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 \
-  libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
-  libasound2t64 libpango-1.0-0 libnspr4 libnss3
-
-# Start with PM2
-pm2 start server.js --name rentpro-api
-pm2 save
-pm2 startup
+```text
+http://localhost:5173
 ```
 
-### Frontend (Build + Serve via Nginx)
-```bash
-cd /your/path/frontend
-npm install
+## Default First-Run Accounts
+
+From `backend/.env.example`:
+
+```text
+developer / developer123
+admin / admin123
+```
+
+Change these before production.
+
+## Build For Production
+
+```bat
+cd frontend
 npm run build
-# Built files → backend/public/
 ```
 
-The build output goes directly into `backend/public/` and Express serves it automatically.
+The frontend build is written into `backend/public`, and the backend serves it automatically.
 
-### Nginx config (optional, for custom domain)
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
+Then run:
 
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-    }
-
-    location / {
-        root /your/path/backend/public;
-        try_files $uri $uri/ /index.html;
-    }
-}
+```bat
+cd backend
+npm start
 ```
 
----
+## WhatsApp
 
-## 🔧 Environment Variables (backend/.env)
+Each user has their own WhatsApp session. After logging in, open the WhatsApp page and scan the QR code for that account.
 
-| Variable       | Default         | Description                        |
-|----------------|-----------------|------------------------------------|
-| PORT           | 3001            | API server port                    |
-| JWT_SECRET     | (change this!)  | Secret for JWT signing             |
-| JWT_EXPIRES_IN | 7d              | Token expiry                       |
-| ADMIN_USER     | admin           | Initial admin username             |
-| ADMIN_PASS     | admin123        | Initial admin password             |
-| CURRENCY       | USD             | Default currency                   |
-| TIMEZONE       | Asia/Baghdad    | Cron job timezone                  |
-| CHROME_PATH    | (auto-detect)   | Path to Chrome binary              |
-| DB_PATH        | ./db/rentpro.db | SQLite database file path          |
+Local WhatsApp sessions and uploaded template images are ignored by Git:
 
----
+```text
+backend/.wa_session/
+backend/uploads/
+```
 
-## 💡 Default Credentials
-- Username: `admin`
-- Password: `admin123`
+## GitHub Notes
 
-**Change these immediately after first login in Settings → Security.**
-"# mysystem" 
-# mysystem
+Do not upload local runtime files:
+
+- `.env`
+- SQLite database files: `*.db`, `*.db-wal`, `*.db-shm`
+- `node_modules`
+- WhatsApp sessions
+- Uploads
+- Logs
+
+These are already covered by `.gitignore`.
+
+## Useful Commands
+
+```bat
+cd backend
+npm start
+```
+
+```bat
+cd frontend
+npm run dev
+```
+
+```bat
+cd frontend
+npm run build
+```

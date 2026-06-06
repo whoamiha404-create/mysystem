@@ -1,0 +1,125 @@
+import { useState, useEffect } from 'react';
+import { Info, Loader2, Palette } from 'lucide-react';
+import api from '../api/client';
+import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
+
+export default function Settings() {
+  const { t } = useLanguage();
+  const { isDark, toggle } = useTheme();
+  const [settings, setSettings] = useState({});
+  const [pass,     setPass]     = useState({ current:'', newPass:'', newUser:'' });
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+  const toast = useToast();
+
+  useEffect(() => { api.getSettings().then(s=>{setSettings(s);setLoading(false);}); }, []);
+  function set(k,v) { setSettings(s=>({...s,[k]:v})); }
+
+  async function saveGeneral() {
+    setSaving('general');
+    try { await api.saveSettings(settings); toast(t('saveSettings')+' ','success'); }
+    catch(e) { toast(e.message,'error'); } finally { setSaving(false); }
+  }
+
+  async function savePassword() {
+    if (!pass.current) { toast(t('currentPassword')+' required','error'); return; }
+    setSaving('pass');
+    try {
+      await api.changePass({ currentPass:pass.current, newPass:pass.newPass||undefined, newUser:pass.newUser||undefined });
+      toast(t('updateCredentials')+' ','success');
+      setPass({ current:'', newPass:'', newUser:'' });
+    } catch(e) { toast(e.message,'error'); } finally { setSaving(false); }
+  }
+
+  if (loading) return <div className="empty-state"><Loader2 className="animate-spin" size={32} /></div>;
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>{t('settingsTitle')}</h1>
+        <p>{t('settingsSub')}</p>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'start'}}>
+        {/* General */}
+        <div className="card">
+          <div className="card-header"><h3>{t('businessSettings')}</h3></div>
+          <div className="card-body">
+            <div className="form-grid" style={{gridTemplateColumns:'1fr'}}>
+              <div className="form-group"><label>{t('appName')}</label><input value={settings.appName||''} onChange={e=>set('appName',e.target.value)} /></div>
+              <div className="form-group"><label>{t('companyName')}</label><input value={settings.companyName||''} onChange={e=>set('companyName',e.target.value)} /></div>
+              <div className="form-group"><label>{t('contractCoordinator')}</label><input value={settings.contractCoordinator||''} onChange={e=>set('contractCoordinator',e.target.value)} /></div>
+              <div className="form-group">
+                <label>{t('currency')}</label>
+                <select value={settings.currency||'USD'} onChange={e=>set('currency',e.target.value)}>
+                  {['USD','EUR','GBP','IQD','AED','SAR','TRY'].map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>{t('timezone')}</label>
+                <select value={settings.timezone||'Asia/Baghdad'} onChange={e=>set('timezone',e.target.value)}>
+                  {['Asia/Baghdad','Asia/Dubai','Asia/Riyadh','Europe/London','Europe/Paris','America/New_York','America/Los_Angeles','UTC'].map(tz=><option key={tz} value={tz}>{tz}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>{t('reminderHour')}</label><input type="number" min="0" max="23" value={settings.scheduleHour||9} onChange={e=>set('scheduleHour',e.target.value)} /></div>
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
+              <button className="btn btn-primary" onClick={saveGeneral} disabled={saving==='general'}>{saving==='general'?'...':t('saveSettings')}</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Theme + Security */}
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+          {/* Dark mode quick toggle */}
+          <div className="card">
+            <div className="card-body" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
+              <div>
+                <div style={{fontWeight:700,fontSize:'var(--text-md)'}}>{isDark ? t('darkMode') : t('lightMode')}</div>
+                <div style={{fontSize:'var(--text-sm)',color:'var(--text-muted)',marginTop:4}}>{isDark ? 'Dark mode is ON' : 'Light mode is ON'}</div>
+              </div>
+              <button className="btn btn-secondary" onClick={toggle} style={{minWidth:120}}>
+                <><Palette size={15} /> {isDark ? t('lightMode') : t('darkMode')}</>
+              </button>
+            </div>
+          </div>
+
+          {/* Security */}
+          <div className="card">
+            <div className="card-header"><h3>{t('security')}</h3></div>
+            <div className="card-body">
+              <div className="form-grid" style={{gridTemplateColumns:'1fr'}}>
+                <div className="form-group"><label>{t('currentPassword')}</label><input type="password" value={pass.current} onChange={e=>setPass(p=>({...p,current:e.target.value}))} placeholder="••••••••" /></div>
+                <div className="form-group"><label>{t('newUsername')}</label><input value={pass.newUser} onChange={e=>setPass(p=>({...p,newUser:e.target.value}))} placeholder={t('keepCurrent')} /></div>
+                <div className="form-group"><label>{t('newPassword')}</label><input type="password" value={pass.newPass} onChange={e=>setPass(p=>({...p,newPass:e.target.value}))} placeholder={t('keepCurrent')} /></div>
+              </div>
+              <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
+                <button className="btn btn-primary" onClick={savePassword} disabled={saving==='pass'}>{saving==='pass'?'...':t('updateCredentials')}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Message templates */}
+        <div className="card" style={{gridColumn:'1/-1'}}>
+          <div className="card-header"><h3>{t('messageTemplates')}</h3></div>
+          <div className="card-body">
+            <div className="alert alert-blue" style={{marginBottom:16}}>
+              <Info size={16} />
+              <span>{t('availableVars')}: <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{name}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{apt}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{rent}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{currency}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{payDay}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{days}}'}</code></span>
+            </div>
+            <div className="form-grid" style={{gridTemplateColumns:'1fr 1fr'}}>
+              <div className="form-group"><label>{t('reminderMsg')}</label><textarea rows={6} value={settings.msgReminder||''} onChange={e=>set('msgReminder',e.target.value)} /></div>
+              <div className="form-group"><label>{t('lateMsg')}</label><textarea rows={6} value={settings.msgLate||''} onChange={e=>set('msgLate',e.target.value)} /></div>
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
+              <button className="btn btn-primary" onClick={saveGeneral} disabled={saving==='general'}>{saving==='general'?'...':t('saveTemplates')}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
