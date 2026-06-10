@@ -55,7 +55,7 @@ export default function Home() {
   return (
     <div>
       <div className="page-header">
-        <h1>{t('home')}</h1>
+        <h1>{t('dashboard')}</h1>
         <p>{t('dashSub')}</p>
       </div>
 

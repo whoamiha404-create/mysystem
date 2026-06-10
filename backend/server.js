@@ -9,9 +9,10 @@ const wa = require('./services/whatsapp');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const RENEWAL_DEFAULT_MESSAGE = `سڵاو {{name}}، بەرواری نوێکردنەوەی گرێبەستی کرێ بۆ {{apt}} نزیکە. کۆتایی گرێبەست: {{contractEnd}} ({{days}} ڕۆژ ماوە). تکایە بۆ نوێکردنەوە و پارەدانی تێچووی نوێکردنەوە/باج سەردانمان بکە. {{company}}`;
 
 app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '30mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/tenants', require('./routes/tenants'));
@@ -36,6 +37,32 @@ if (fs.existsSync(publicDir)) {
   });
 }
 
+function startOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function daysUntil(dateText) {
+  if (!dateText) return null;
+  const target = new Date(dateText);
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.ceil((startOfDay(target) - startOfDay()) / 86400000);
+}
+
+function settingDays(value, fallback = [5, 3, 1]) {
+  try {
+    const days = JSON.parse(value || '[]').map(Number).filter(Number.isFinite);
+    return days.length ? days : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function fillTemplate(template, values) {
+  return String(template || '').replace(/{{(\w+)}}/g, (_, key) => values[key] ?? '');
+}
+
 function scheduleCron() {
   cron.schedule('0 * * * *', async () => {
     console.log('Running daily reminder check...');
@@ -51,6 +78,7 @@ function scheduleCron() {
 
       wa.start(user.id);
       const tenants = db.prepare(`SELECT * FROM tenants WHERE user_id = ?`).all(user.id);
+      const renewalDays = settingDays(settings.renewalReminderDays);
 
       for (const tenant of tenants) {
         const payDay = parseInt(tenant.pay_day, 10) || 1;
@@ -98,6 +126,28 @@ function scheduleCron() {
             addLog('success', `Late alert sent to ${tenant.name}`, tenant.name, user.id);
           } catch (e) {
             addLog('error', `Failed late alert for ${tenant.name}: ${e.message}`, tenant.name, user.id);
+          }
+        }
+
+        const renewalDiff = daysUntil(tenant.contract_end);
+        if (renewalDiff !== null && renewalDays.includes(renewalDiff)) {
+          const msg = fillTemplate(settings.msgRenewal || RENEWAL_DEFAULT_MESSAGE, {
+            name: tenant.name,
+            apt: tenant.apt,
+            rent: tenant.rent,
+            currency: settings.currency || 'USD',
+            payDay: tenant.pay_day,
+            contractStart: tenant.contract_start || '',
+            contractEnd: tenant.contract_end || '',
+            days: renewalDiff,
+            company: settings.companyName || settings.appName || '',
+          });
+
+          try {
+            await wa.sendMessage(user.id, tenant.phone, msg);
+            addLog('success', `Renewal reminder (${renewalDiff} days before) sent to ${tenant.name}`, tenant.name, user.id);
+          } catch (e) {
+            addLog('error', `Failed renewal reminder for ${tenant.name}: ${e.message}`, tenant.name, user.id);
           }
         }
       }

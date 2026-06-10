@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
+  CalendarClock,
   ChevronRight,
   ClipboardList,
   CreditCard,
@@ -21,9 +22,9 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import api from '../api/client';
 import FlagIcon from './FlagIcon';
 import './Sidebar.css';
-import logo from '../hopezone.png';
 
 const ICON_SIZE = 17;
 const SUB_ICON_SIZE = 15;
@@ -34,13 +35,31 @@ export default function Sidebar({ waState }) {
   const { isDark, toggle } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [contractsOpen, setContractsOpen] = useState(() => location.pathname.startsWith('/contracts'));
-  const contractsActive = location.pathname.startsWith('/contracts');
+  const [contractsOpen, setContractsOpen] = useState(() => location.pathname.startsWith('/contracts') || location.pathname.startsWith('/renew-rent-contracts'));
+  const contractsActive = location.pathname.startsWith('/contracts') || location.pathname.startsWith('/renew-rent-contracts');
   const [receiptsOpen, setReceiptsOpen] = useState(() => location.pathname.startsWith('/receipts') || location.pathname.startsWith('/give-receipts'));
   const receiptsActive = location.pathname.startsWith('/receipts') || location.pathname.startsWith('/give-receipts');
   const [anketsOpen, setAnketsOpen] = useState(() => location.pathname.startsWith('/ankets'));
   const anketsActive = location.pathname.startsWith('/ankets');
-  const canManageCompany = user?.role === 'developer' || user?.role === 'admin';
+  const [settings, setSettings] = useState({});
+  const isDeveloper = user?.role === 'developer';
+  const isAdmin = user?.role === 'admin';
+  const canManageCompany = isDeveloper || isAdmin;
+
+  useEffect(() => {
+    let alive = true;
+    const loadSettings = () => {
+      api.getSettings().then(data => {
+        if (alive) setSettings(data || {});
+      }).catch(() => {});
+    };
+    loadSettings();
+    window.addEventListener('rentpro-settings-updated', loadSettings);
+    return () => {
+      alive = false;
+      window.removeEventListener('rentpro-settings-updated', loadSettings);
+    };
+  }, []);
 
   useEffect(() => {
     if (contractsActive) setContractsOpen(true);
@@ -64,16 +83,22 @@ export default function Sidebar({ waState }) {
     : waState === 'init' ? 'dot-blue'
     : 'dot-red';
 
-  const nav = [
-    { to:'/', icon:BarChart3, key:'dashboard', end:true },
-    { to:'/dashboard', icon:Home, key:'home' },
+  const operationalNav = [
+    { to:'/', icon:Home, key:'home', end:true },
+    { to:'/dashboard', icon:BarChart3, key:'dashboard' },
     { to:'/tenants', icon:UserRound, key:'tenants' },
     { to:'/payments', icon:CreditCard, key:'payments' },
+  ];
+  const afterDropdownNav = [
     { to:'/expenses', icon:Package, key:'expenses' },
     { to:'/reports', icon:BarChart3, key:'reports' },
     { to:'/whatsapp', icon:MessageCircle, key:'whatsapp' },
     { to:'/settings', icon:Settings, key:'settings' },
   ];
+  const developerNav = [
+    { to:'/settings', icon:Settings, key:'settings' },
+  ];
+  const nav = isDeveloper ? developerNav : operationalNav;
   const receiptNav = [
     { to:'/receipts', icon:ReceiptText, key:'receiveReceipts' },
     { to:'/give-receipts', icon:HandCoins, key:'giveReceipts' },
@@ -81,6 +106,7 @@ export default function Sidebar({ waState }) {
   const contractNav = [
     { to:'/contracts/sell', icon:FileText, key:'sellContract' },
     { to:'/contracts/rent', icon:ClipboardList, key:'rentContract' },
+    { to:'/renew-rent-contracts', icon:CalendarClock, key:'renewRentContract' },
   ];
   const anketLabels = {
     en: { security: 'Security Anket', project: 'Project Anket' },
@@ -91,25 +117,30 @@ export default function Sidebar({ waState }) {
     { to:'/ankets/security', icon:FileText, label:anketLabels.security },
     { to:'/ankets/project', icon:FileText, label:anketLabels.project },
   ];
-  const adminNav = [
-    { to:'/users', icon:UsersRound, key:'users' },
-    { to:'/agent-reports', icon:ClipboardCheck, key:'agentReports' },
-  ];
+  const adminNav = isDeveloper
+    ? [{ to:'/users', icon:UsersRound, key:'users' }]
+    : [
+        { to:'/users', icon:UsersRound, key:'users' },
+        { to:'/agent-reports', icon:ClipboardCheck, key:'agentReports' },
+      ];
   const languages = [
     { code:'en', label:'EN', title:'English' },
     { code:'ar', label:'عر', title:'العربية' },
     { code:'ku', label:'کو', title:'کوردی' },
   ];
 
+  const companyName = (settings.companyName || '').trim();
+  const appName = (settings.appName || '').trim();
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo_sidabar">
-        <div className="sidebar-logo-icon_siddar">
-          <img src={logo} alt="Hope Zone Logo" />
+        <div className={`sidebar-logo-icon_siddar ${settings.appLogo ? '' : 'is-empty'}`}>
+          {settings.appLogo && <img src={settings.appLogo} alt={companyName || 'Company logo'} />}
         </div>
         <div className="sidebar-logo-text">
-          <div className="sidebar-logo-name">HOPE ZONE</div>
-          <div className="sidebar-logo-sub">REAL ESTATE COMPANY</div>
+          <div className="sidebar-logo-name">{companyName || appName || ''}</div>
+          <div className="sidebar-logo-sub">{appName && companyName !== appName ? appName : ''}</div>
         </div>
       </div>
 
@@ -124,70 +155,82 @@ export default function Sidebar({ waState }) {
           </NavLink>
         ))}
 
-        <div className="sidebar-section-label" style={{ marginTop:16 }}>{t('receipts')}</div>
-        <button
-          type="button"
-          className={`sidebar-item sidebar-dropdown-toggle ${receiptsActive ? 'active' : ''}`}
-          onClick={() => setReceiptsOpen(open => !open)}
-        >
-          <span className="sidebar-icon"><ReceiptText size={ICON_SIZE} strokeWidth={2.25} /></span>
-          <span className="sidebar-label">{t('receipts')}</span>
-          <ChevronRight className={`sidebar-chevron ${receiptsOpen ? 'open' : ''}`} size={16} strokeWidth={2.5} />
-        </button>
-        {receiptsOpen && (
-          <div className="sidebar-subgroup">
-            {receiptNav.map(item => (
-              <NavLink key={item.to} to={item.to}
-                className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
-                <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
-                <span className="sidebar-label">{t(item.key)}</span>
-              </NavLink>
-            ))}
-          </div>
-        )}
+        {!isDeveloper && (
+          <>
+            <button
+              type="button"
+              className={`sidebar-item sidebar-dropdown-toggle ${receiptsActive ? 'active' : ''}`}
+              onClick={() => setReceiptsOpen(open => !open)}
+            >
+              <span className="sidebar-icon"><ReceiptText size={ICON_SIZE} strokeWidth={2.25} /></span>
+              <span className="sidebar-label">{t('receipts')}</span>
+              <ChevronRight className={`sidebar-chevron ${receiptsOpen ? 'open' : ''}`} size={16} strokeWidth={2.5} />
+            </button>
+            {receiptsOpen && (
+              <div className="sidebar-subgroup">
+                {receiptNav.map(item => (
+                  <NavLink key={item.to} to={item.to}
+                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
+                    <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
+                    <span className="sidebar-label">{t(item.key)}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
 
-        <div className="sidebar-section-label" style={{ marginTop:16 }}>{t('contractSection')}</div>
-        <button
-          type="button"
-          className={`sidebar-item sidebar-dropdown-toggle ${contractsActive ? 'active' : ''}`}
-          onClick={() => setContractsOpen(open => !open)}
-        >
-          <span className="sidebar-icon"><FileText size={ICON_SIZE} strokeWidth={2.25} /></span>
-          <span className="sidebar-label">{t('contractSection')}</span>
-          <ChevronRight className={`sidebar-chevron ${contractsOpen ? 'open' : ''}`} size={16} strokeWidth={2.5} />
-        </button>
-        {contractsOpen && (
-          <div className="sidebar-subgroup">
-            {contractNav.map(item => (
-              <NavLink key={item.to} to={item.to}
-                className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
-                <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
-                <span className="sidebar-label">{t(item.key)}</span>
-              </NavLink>
-            ))}
-          </div>
-        )}
+            <div className="sidebar-section-label" style={{ marginTop:16 }}>{t('contractSection')}</div>
+            <button
+              type="button"
+              className={`sidebar-item sidebar-dropdown-toggle ${contractsActive ? 'active' : ''}`}
+              onClick={() => setContractsOpen(open => !open)}
+            >
+              <span className="sidebar-icon"><FileText size={ICON_SIZE} strokeWidth={2.25} /></span>
+              <span className="sidebar-label">{t('contractSection')}</span>
+              <ChevronRight className={`sidebar-chevron ${contractsOpen ? 'open' : ''}`} size={16} strokeWidth={2.5} />
+            </button>
+            {contractsOpen && (
+              <div className="sidebar-subgroup">
+                {contractNav.map(item => (
+                  <NavLink key={item.to} to={item.to}
+                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
+                    <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
+                    <span className="sidebar-label">{t(item.key)}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
 
-        <div className="sidebar-section-label" style={{ marginTop:16 }}>{t('ankets')}</div>
-        <button
-          type="button"
-          className={`sidebar-item sidebar-dropdown-toggle ${anketsActive ? 'active' : ''}`}
-          onClick={() => setAnketsOpen(open => !open)}
-        >
-          <span className="sidebar-icon"><FileText size={ICON_SIZE} strokeWidth={2.25} /></span>
-          <span className="sidebar-label">{t('ankets')}</span>
-          <ChevronRight className={`sidebar-chevron ${anketsOpen ? 'open' : ''}`} size={16} strokeWidth={2.5} />
-        </button>
-        {anketsOpen && (
-          <div className="sidebar-subgroup">
-            {anketNav.map(item => (
+            <div className="sidebar-section-label" style={{ marginTop:16 }}>{t('ankets')}</div>
+            <button
+              type="button"
+              className={`sidebar-item sidebar-dropdown-toggle ${anketsActive ? 'active' : ''}`}
+              onClick={() => setAnketsOpen(open => !open)}
+            >
+              <span className="sidebar-icon"><FileText size={ICON_SIZE} strokeWidth={2.25} /></span>
+              <span className="sidebar-label">{t('ankets')}</span>
+              <ChevronRight className={`sidebar-chevron ${anketsOpen ? 'open' : ''}`} size={16} strokeWidth={2.5} />
+            </button>
+            {anketsOpen && (
+              <div className="sidebar-subgroup">
+                {anketNav.map(item => (
+                  <NavLink key={item.to} to={item.to}
+                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
+                    <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
+                    <span className="sidebar-label">{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+
+            {afterDropdownNav.map(item => (
               <NavLink key={item.to} to={item.to}
-                className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
-                <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
-                <span className="sidebar-label">{item.label}</span>
+                className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+                <span className="sidebar-icon"><item.icon size={ICON_SIZE} strokeWidth={2.25} /></span>
+                <span className="sidebar-label">{t(item.key)}</span>
+                {item.to === '/whatsapp' && <span className={`sidebar-dot ${waDot}`}></span>}
               </NavLink>
             ))}
-          </div>
+          </>
         )}
 
         {canManageCompany && (

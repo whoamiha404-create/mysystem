@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, FilePlus, Home, Printer, Search, Trash2, X } from 'lucide-react';
+import { Eye, FilePlus, Home, Printer, Save, Search, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -664,10 +664,12 @@ export default function Ankets({ type = 'security', mode = 'library' }) {
 
           <div className="anket-actions">
             <button type="button" className="anket-save" onClick={handleSave}>
-              {text.save} ▣
+              <Save size={16} />
+              {text.save}
             </button>
             <button type="button" className="anket-new" onClick={handleNewPage}>
-              {text.newPage} ◻
+              <FilePlus size={16} />
+              {text.newPage}
             </button>
           </div>
         </section>

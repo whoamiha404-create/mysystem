@@ -6,6 +6,49 @@ const { db, getSettings, addLog } = require('../db/database');
 const wa      = require('../services/whatsapp');
 const auth    = require('../middleware/auth');
 
+const RENEWAL_DEFAULT_MESSAGE = `سڵاو {{name}}، بەرواری نوێکردنەوەی گرێبەستی کرێ بۆ {{apt}} نزیکە. کۆتایی گرێبەست: {{contractEnd}} ({{days}} ڕۆژ ماوە). تکایە بۆ نوێکردنەوە و پارەدانی تێچووی نوێکردنەوە/باج سەردانمان بکە. {{company}}`;
+
+function startOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function daysUntil(dateText) {
+  if (!dateText) return null;
+  const target = new Date(dateText);
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.ceil((startOfDay(target) - startOfDay()) / 86400000);
+}
+
+function applyTemplate(template, values) {
+  return String(template || '').replace(/{{(\w+)}}/g, (_, key) => values[key] ?? '');
+}
+
+function renewalMessage(tenant, settings, days) {
+  return applyTemplate(settings.msgRenewal || RENEWAL_DEFAULT_MESSAGE, {
+    name: tenant.name,
+    apt: tenant.apt,
+    rent: tenant.rent,
+    currency: settings.currency || 'USD',
+    payDay: tenant.pay_day,
+    contractStart: tenant.contract_start || '',
+    contractEnd: tenant.contract_end || '',
+    days,
+    company: settings.companyName || settings.appName || '',
+  });
+}
+
+function getRenewalWindow(settings, bodyDays) {
+  if (Number.isFinite(Number(bodyDays))) return Math.max(0, Number(bodyDays));
+  try {
+    const days = JSON.parse(settings.renewalReminderDays || '[]').map(Number).filter(Number.isFinite);
+    return days.length ? Math.max(...days) : 7;
+  } catch {
+    return 7;
+  }
+}
+
 // ── Multer setup — save template image ───────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, wa.uploadDirFor(req.user.id)),
@@ -127,6 +170,50 @@ router.post('/remind-all', auth, async (req, res) => {
       addLog('success', `Bulk reminder sent to ${t.name}`, t.name, req.user.id);
     } catch(e) {
       results.push({ name: t.name, error: e.message });
+    }
+  }
+
+  res.json({ results });
+});
+
+// POST /api/whatsapp/renewal/:tenantId
+router.post('/renewal/:tenantId', auth, async (req, res) => {
+  const t = db.prepare(`SELECT * FROM tenants WHERE id = ? AND user_id = ?`).get(req.params.tenantId, req.user.id);
+  if (!t) return res.status(404).json({ error: 'Tenant not found' });
+  if (!t.phone) return res.status(400).json({ error: 'Tenant phone is missing' });
+  if (!t.contract_end) return res.status(400).json({ error: 'Contract end date is missing' });
+
+  const settings = getSettings(req.user.id);
+  const days = daysUntil(t.contract_end);
+  const withImage = req.body.withImage === true;
+  const msg = renewalMessage(t, settings, days ?? '');
+
+  try {
+    await wa.sendMessage(req.user.id, t.phone, msg, withImage);
+    addLog('success', `Renewal reminder sent to ${t.name}`, t.name, req.user.id);
+    res.json({ ok: true, days });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/whatsapp/renewal-all
+router.post('/renewal-all', auth, async (req, res) => {
+  const settings = getSettings(req.user.id);
+  const windowDays = getRenewalWindow(settings, req.body.days);
+  const withImage = req.body.withImage === true;
+  const tenants = db.prepare(`SELECT * FROM tenants WHERE user_id = ? AND contract_end <> '' ORDER BY contract_end ASC`).all(req.user.id);
+  const results = [];
+
+  for (const t of tenants) {
+    const days = daysUntil(t.contract_end);
+    if (days === null || days < 0 || days > windowDays) continue;
+    try {
+      await wa.sendMessage(req.user.id, t.phone, renewalMessage(t, settings, days), withImage);
+      results.push({ id: t.id, name: t.name, ok: true, days });
+      addLog('success', `Bulk renewal reminder sent to ${t.name}`, t.name, req.user.id);
+    } catch(e) {
+      results.push({ id: t.id, name: t.name, error: e.message, days });
     }
   }
 

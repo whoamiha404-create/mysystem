@@ -1,107 +1,347 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, Loader2, ShieldCheck, UserRound } from 'lucide-react';
+import { Activity, CreditCard, FileText, Loader2, ReceiptText, Search, UserRound, WalletCards } from 'lucide-react';
 import api from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
 
-function formatDate(value) {
-  return value ? String(value).slice(0, 16) : '-';
+const COPY = {
+  en: {
+    chooseAgent: 'Choose agent',
+    noAgents: 'No agents created yet.',
+    receiveReceipts: 'Receive receipts',
+    giveReceipts: 'Give receipts',
+    sellContracts: 'Sell contracts',
+    rentContracts: 'Rent contracts',
+    paidPayments: 'Paid payments',
+    expenses: 'Expenses',
+    activity: 'Activity',
+    receiptsTable: 'Receipts',
+    contractsTable: 'Contracts',
+    paymentsTable: 'Payments',
+    expensesTable: 'Expenses',
+    activityTable: 'Activity',
+    receiptNo: 'Receipt #',
+    tenant: 'Tenant',
+    amount: 'Amount',
+    date: 'Date',
+    wa: 'WA',
+    type: 'Type',
+    title: 'Title',
+    price: 'Price',
+    status: 'Status',
+    apartment: 'Apt',
+    month: 'Month',
+    description: 'Description',
+    category: 'Category',
+    message: 'Message',
+    noRecords: 'No records.',
+    searchAgents: 'Search agents...',
+  },
+  ar: {
+    chooseAgent: 'اختر الوكيل',
+    noAgents: 'لا يوجد وكلاء بعد.',
+    receiveReceipts: 'إيصالات القبض',
+    giveReceipts: 'إيصالات الدفع',
+    sellContracts: 'عقود البيع',
+    rentContracts: 'عقود الإيجار',
+    paidPayments: 'المدفوعات المدفوعة',
+    expenses: 'المصروفات',
+    activity: 'النشاط',
+    receiptsTable: 'الإيصالات',
+    contractsTable: 'العقود',
+    paymentsTable: 'المدفوعات',
+    expensesTable: 'المصروفات',
+    activityTable: 'النشاط',
+    receiptNo: 'رقم الإيصال',
+    tenant: 'المستأجر',
+    amount: 'المبلغ',
+    date: 'التاريخ',
+    wa: 'واتساب',
+    type: 'النوع',
+    title: 'العنوان',
+    price: 'السعر',
+    status: 'الحالة',
+    apartment: 'الشقة',
+    month: 'الشهر',
+    description: 'الوصف',
+    category: 'الفئة',
+    message: 'الرسالة',
+    noRecords: 'لا توجد سجلات.',
+    searchAgents: 'بحث عن وكيل...',
+  },
+  ku: {
+    chooseAgent: 'ئەندام هەڵبژێرە',
+    noAgents: 'هێشتا ئەندام دروست نەکراوە.',
+    receiveReceipts: 'پسوولەی پارە وەرگرتن',
+    giveReceipts: 'پسوولەی پارەدان',
+    sellContracts: 'گرێبەستی فرۆشتن',
+    rentContracts: 'گرێبەستی کرێ',
+    paidPayments: 'پارەدانی دراو',
+    expenses: 'خەرجیەکان',
+    activity: 'چالاکی',
+    receiptsTable: 'پسوولەکان',
+    contractsTable: 'گرێبەستەکان',
+    paymentsTable: 'پارەدانەکان',
+    expensesTable: 'خەرجیەکان',
+    activityTable: 'چالاکی',
+    receiptNo: 'ژمارەی پسوولە',
+    tenant: 'کرێچی',
+    amount: 'بڕ',
+    date: 'بەروار',
+    wa: 'واتساپ',
+    type: 'جۆر',
+    title: 'ناونیشان',
+    price: 'نرخ',
+    status: 'دۆخ',
+    apartment: 'شوقە',
+    month: 'مانگ',
+    description: 'وەسف',
+    category: 'پۆل',
+    message: 'پەیام',
+    noRecords: 'هیچ تۆمارێک نییە.',
+    searchAgents: 'گەڕان بە ناوی ئەندام...',
+  },
+};
+
+function fmtMoney(amount, currency = 'USD') {
+  const n = Number(amount || 0);
+  return `${n.toLocaleString()} ${currency || 'USD'}`;
+}
+
+function shortDate(value) {
+  if (!value) return '-';
+  return String(value).replace('T', ' ').slice(0, 16);
+}
+
+function EmptyRow({ colSpan, text }) {
+  return (
+    <tr>
+      <td colSpan={colSpan} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24 }}>
+        {text}
+      </td>
+    </tr>
+  );
 }
 
 export default function AgentReports() {
-  const { t } = useLanguage();
-  const [users, setUsers] = useState([]);
-  const [logs, setLogs] = useState([]);
+  const { t, lang } = useLanguage();
+  const text = COPY[lang] || COPY.en;
+  const [report, setReport] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.getUsers(), api.getLogs(500, true)])
-      .then(([userRows, logRows]) => {
-        setUsers(userRows);
-        setLogs(logRows);
+    let alive = true;
+    api.getUserReports()
+      .then(data => {
+        if (!alive) return;
+        setReport(data);
+        setSelectedId(data.agents?.[0]?.id || null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => alive && setLoading(false));
+    return () => { alive = false; };
   }, []);
 
-  const rows = useMemo(() => users
-    .filter(user => user.role !== 'developer')
-    .map(user => {
-      const userLogs = logs.filter(log => {
-        if (log.user_id && Number(log.user_id) === Number(user.id)) return true;
-        const name = String(log.name || '').toLowerCase();
-        return name === String(user.name || '').toLowerCase()
-          || name === String(user.username || '').toLowerCase();
-      });
-      return {
-        ...user,
-        activityCount: userLogs.length,
-        lastActivity: userLogs[0]?.time || '',
-        lastMessage: userLogs[0]?.message || '-',
-      };
-    }), [logs, users]);
+  const agents = report?.agents || [];
+  const filteredAgents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return agents;
+    return agents.filter(agent =>
+      [agent.name, agent.username, agent.phone, agent.email].some(value => String(value || '').toLowerCase().includes(q))
+    );
+  }, [agents, search]);
+
+  const selected = agents.find(agent => Number(agent.id) === Number(selectedId)) || filteredAgents[0] || agents[0];
+  const totals = selected?.totals || {};
+
+  const statCards = [
+    { label: text.receiveReceipts, value: totals.receipts || 0, meta: fmtMoney(totals.receiptAmount), icon: ReceiptText, accent: '#2563eb', dim: 'var(--primary-dim)' },
+    { label: text.giveReceipts, value: totals.giveReceipts || 0, meta: fmtMoney(totals.giveAmount), icon: WalletCards, accent: '#7c3aed', dim: 'var(--purple-dim)' },
+    { label: text.sellContracts, value: totals.sellContracts || 0, meta: text.contractsTable, icon: FileText, accent: '#d97706', dim: 'var(--warning-dim)' },
+    { label: text.rentContracts, value: totals.rentContracts || 0, meta: text.contractsTable, icon: FileText, accent: '#059669', dim: 'var(--success-dim)' },
+    { label: text.paidPayments, value: totals.paidPayments || 0, meta: fmtMoney(totals.paidAmount), icon: CreditCard, accent: '#0891b2', dim: 'var(--cyan-dim, #cffafe)' },
+    { label: text.expenses, value: totals.expenses || 0, meta: fmtMoney(totals.expenseAmount), icon: WalletCards, accent: '#dc2626', dim: 'var(--danger-dim)' },
+    { label: text.activity, value: totals.activity || 0, meta: text.lastActivity, icon: Activity, accent: '#475569', dim: 'var(--bg-hover)' },
+  ];
 
   if (loading) {
-    return <div className="empty-state"><Loader2 className="animate-spin" size={32} /></div>;
+    return (
+      <div className="page">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 24 }}>
+          <Loader2 className="animate-spin" size={22} /> {t('loading')}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
+    <div className="page">
       <div className="page-header">
-        <h1>{t('agentReports')}</h1>
-        <p>{t('agentReportsSub')}</p>
-      </div>
-
-      <div className="stat-grid" style={{ gridTemplateColumns:'repeat(3, minmax(180px, 1fr))' }}>
-        <div className="stat-card" style={{ '--stat-accent':'var(--primary)', '--stat-dim':'var(--primary-dim)' }}>
-          <div className="stat-icon"><UserRound size={22} strokeWidth={2.25} /></div>
-          <div className="stat-label">{t('agent')}</div>
-          <div className="stat-value">{rows.filter(user => user.role === 'agent').length}</div>
-          <div className="stat-sub">{t('users')}</div>
-        </div>
-        <div className="stat-card" style={{ '--stat-accent':'var(--purple)', '--stat-dim':'var(--purple-dim)' }}>
-          <div className="stat-icon"><ShieldCheck size={22} strokeWidth={2.25} /></div>
-          <div className="stat-label">{t('ownerRole')}</div>
-          <div className="stat-value">{rows.filter(user => user.role === 'admin').length}</div>
-          <div className="stat-sub">{t('adminSection')}</div>
-        </div>
-        <div className="stat-card" style={{ '--stat-accent':'var(--success)', '--stat-dim':'var(--success-dim)' }}>
-          <div className="stat-icon"><Activity size={22} strokeWidth={2.25} /></div>
-          <div className="stat-label">{t('totalActivity')}</div>
-          <div className="stat-value">{rows.reduce((sum, user) => sum + user.activityCount, 0)}</div>
-          <div className="stat-sub">{t('activityLogs')}</div>
+        <div>
+          <h1>{t('agentReports')}</h1>
+          <p>{t('agentReportsSub')}</p>
         </div>
       </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          {rows.length === 0 ? (
-            <div className="empty-state"><h3>{t('noUsers')}</h3></div>
+      <div className="grid two" style={{ alignItems: 'start' }}>
+        <section className="card" style={{ overflow: 'hidden' }}>
+          <div className="card-header">
+            <h2>{text.chooseAgent}</h2>
+          </div>
+          <div style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0 12px', background: 'var(--surface)' }}>
+              <Search size={16} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={text.searchAgents} style={{ border: 0, background: 'transparent', boxShadow: 'none' }} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 10, padding: 16, maxHeight: 560, overflow: 'auto' }}>
+            {filteredAgents.length === 0 ? (
+              <div style={{ color: 'var(--text-muted)', padding: 12 }}>{text.noAgents}</div>
+            ) : filteredAgents.map(agent => (
+              <button
+                key={agent.id}
+                type="button"
+                onClick={() => setSelectedId(agent.id)}
+                className="btn"
+                style={{
+                  justifyContent: 'flex-start',
+                  gap: 12,
+                  padding: '14px 16px',
+                  background: Number(selected?.id) === Number(agent.id) ? 'var(--primary)' : 'var(--bg-soft)',
+                  color: Number(selected?.id) === Number(agent.id) ? '#fff' : 'var(--text)',
+                  boxShadow: 'none',
+                }}
+              >
+                <UserRound size={18} />
+                <span style={{ display: 'grid', textAlign: 'start' }}>
+                  <strong>{agent.name || agent.username}</strong>
+                  <small style={{ opacity: 0.75 }}>{agent.username}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ display: 'grid', gap: 18 }}>
+          {selected ? (
+            <>
+              <div className="stat-grid">
+                {statCards.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="stat-card" style={{ '--stat-accent': item.accent, '--stat-dim': item.dim }}>
+                      <div className="stat-icon"><Icon size={20} /></div>
+                      <div className="stat-label">{item.label}</div>
+                      <div className="stat-value">{item.value}</div>
+                      <div className="stat-sub">{item.meta}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <section className="card">
+                <div className="card-header"><h2>{text.receiptsTable}</h2></div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>{text.receiptNo}</th><th>{text.tenant}</th><th>{text.type}</th><th>{text.amount}</th><th>{text.date}</th><th>{text.wa}</th></tr></thead>
+                    <tbody>
+                      {(selected.receipts || []).length === 0 ? <EmptyRow colSpan={6} text={text.noRecords} /> : selected.receipts.map(row => (
+                        <tr key={row.id}>
+                          <td>{row.receipt_no}</td>
+                          <td>{row.tenant_name || row.owner_name || '-'}</td>
+                          <td><span className={`badge ${String(row.receipt_no || '').startsWith('G-') ? 'badge-purple' : 'badge-blue'}`}>{String(row.receipt_no || '').startsWith('G-') ? text.giveReceipts : text.receiveReceipts}</span></td>
+                          <td>{fmtMoney(row.amount, row.currency)}</td>
+                          <td>{shortDate(row.paid_date || row.printed_at)}</td>
+                          <td><span className={`badge ${row.wa_sent ? 'badge-green' : 'badge-gray'}`}>{row.wa_sent ? 'Sent' : '-'}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card-header"><h2>{text.contractsTable}</h2></div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>{text.type}</th><th>{text.title}</th><th>{text.receiptNo}</th><th>{text.price}</th><th>{text.date}</th></tr></thead>
+                    <tbody>
+                      {(selected.contracts || []).length === 0 ? <EmptyRow colSpan={5} text={text.noRecords} /> : selected.contracts.map(row => (
+                        <tr key={row.id}>
+                          <td><span className={`badge ${row.kind === 'sell' ? 'badge-amber' : 'badge-green'}`}>{row.kind === 'sell' ? t('sellContract') : t('rentContract')}</span></td>
+                          <td>{row.title || row.values?.firstParty || row.values?.secondParty || '-'}</td>
+                          <td>{row.contract_no || '-'}</td>
+                          <td>{row.price || row.values?.price || '-'}</td>
+                          <td>{shortDate(row.contract_date || row.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card-header"><h2>{text.paymentsTable}</h2></div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>{text.tenant}</th><th>{text.apartment}</th><th>{text.month}</th><th>{text.amount}</th><th>{text.status}</th><th>{text.date}</th></tr></thead>
+                    <tbody>
+                      {(selected.payments || []).length === 0 ? <EmptyRow colSpan={6} text={text.noRecords} /> : selected.payments.map(row => (
+                        <tr key={row.id}>
+                          <td>{row.tenant_name || '-'}</td>
+                          <td>{row.apt || '-'}</td>
+                          <td>{row.month || '-'}</td>
+                          <td>{fmtMoney(row.amount)}</td>
+                          <td><span className={`badge ${row.status === 'paid' ? 'badge-green' : row.status === 'late' ? 'badge-red' : 'badge-amber'}`}>{row.status || '-'}</span></td>
+                          <td>{shortDate(row.paid_date || row.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card-header"><h2>{text.expensesTable}</h2></div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>{text.date}</th><th>{text.description}</th><th>{text.category}</th><th>{text.amount}</th></tr></thead>
+                    <tbody>
+                      {(selected.expenses || []).length === 0 ? <EmptyRow colSpan={4} text={text.noRecords} /> : selected.expenses.map(row => (
+                        <tr key={row.id}>
+                          <td>{shortDate(row.date)}</td>
+                          <td>{row.description || '-'}</td>
+                          <td><span className="badge badge-purple">{row.category || '-'}</span></td>
+                          <td>{fmtMoney(row.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card-header"><h2>{text.activityTable}</h2></div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>{text.type}</th><th>{text.message}</th><th>{text.date}</th></tr></thead>
+                    <tbody>
+                      {(selected.logs || []).length === 0 ? <EmptyRow colSpan={3} text={text.noRecords} /> : selected.logs.map(row => (
+                        <tr key={row.id}>
+                          <td><span className={`badge ${row.type === 'success' ? 'badge-green' : row.type === 'error' ? 'badge-red' : 'badge-blue'}`}>{row.type}</span></td>
+                          <td>{row.message || '-'}</td>
+                          <td>{shortDate(row.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('nameLabel')}</th>
-                  <th>{t('username')}</th>
-                  <th>{t('role')}</th>
-                  <th>{t('totalActivity')}</th>
-                  <th>{t('lastActivity')}</th>
-                  <th>{t('activityLogs')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(user => (
-                  <tr key={user.id}>
-                    <td className="td-name">{user.name}</td>
-                    <td className="font-mono">{user.username}</td>
-                    <td><span className={`badge ${user.role === 'admin' ? 'badge-purple' : 'badge-blue'}`}>{user.role === 'admin' ? t('ownerRole') : t('agent')}</span></td>
-                    <td style={{ fontWeight:800 }}>{user.activityCount}</td>
-                    <td style={{ color:'var(--text-muted)' }}>{formatDate(user.lastActivity)}</td>
-                    <td style={{ color:'var(--text-secondary)' }}>{user.lastMessage}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <section className="card" style={{ padding: 24, color: 'var(--text-muted)' }}>{text.noAgents}</section>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

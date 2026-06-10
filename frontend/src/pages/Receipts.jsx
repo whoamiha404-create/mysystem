@@ -37,7 +37,7 @@ function printReceipt(data) {
   const amtFmt   = sym + Number(data.amount).toLocaleString();
   const amtWords = amountToWords(data.amount, data.currency);
 
-  const block = `<div style="width:100%;padding-top:2cm;padding-bottom:0.0cm;padding-right:1.5cm;padding-left:3.5cm;font-family:'NRT','Cairo',sans-serif;direction:rtl;background:transparent;box-sizing:border-box;">
+  const block = `<div style="width:100%;padding-top:2cm;padding-bottom:0.0cm;padding-right:2.5cm;padding-left:2.5cm;font-family:'NRT','Cairo',sans-serif;direction:rtl;background:transparent;box-sizing:border-box;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="color:#c8a400;font-size:14px;">بەروار : ${date}</div>
       <div style="color:#c8a400;font-size:17px;">پسوولەی پارەوەرگرتن</div>

@@ -7,7 +7,7 @@ router.get('/', auth, (req, res) => {
 });
 
 router.put('/', auth, (req, res) => {
-  const allowed = ['appName','companyName','contractCoordinator','currency','timezone','reminderDays','scheduleHour','msgReminder','msgLate'];
+  const allowed = ['appName','companyName','appLogo','contractCoordinator','currency','timezone','reminderDays','renewalReminderDays','scheduleHour','msgReminder','msgLate','msgRenewal'];
   const upsert  = db.prepare(`
     INSERT INTO user_settings (user_id, key, value)
     VALUES (?, ?, ?)

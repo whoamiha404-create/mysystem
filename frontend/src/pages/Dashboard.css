@@ -259,3 +259,162 @@
     padding: 16px 18px;
   }
 }
+
+/* Premium dashboard hub */
+.dashboard-hub {
+  gap: 24px;
+}
+
+.dashboard-hub-header {
+  padding: 0 0 22px;
+  border-bottom-color: var(--border);
+}
+
+.dashboard-eyebrow {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 780;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dashboard-hub-header h1 {
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 850;
+  text-transform: none;
+}
+
+.dashboard-date {
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-quick-grid,
+.dashboard-card-grid {
+  gap: 16px;
+}
+
+.dashboard-quick-card,
+.dashboard-module-card {
+  border-color: var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-quick-card {
+  min-height: 96px;
+  padding: 22px;
+}
+
+.dashboard-quick-card:hover,
+.dashboard-module-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-quick-icon,
+.dashboard-module-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--primary-light);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+.dashboard-quick-card strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 820;
+}
+
+.dashboard-quick-card small {
+  color: var(--text-secondary);
+  font-weight: 650;
+}
+
+.dashboard-module-card {
+  min-height: 158px;
+  grid-template-rows: auto 1fr auto auto;
+  align-items: start;
+  padding: 20px;
+  text-align: start;
+}
+
+.dashboard-module-card::before {
+  display: none;
+}
+
+.dashboard-module-icon {
+  position: static;
+  margin-bottom: 18px;
+}
+
+.dashboard-module-meta,
+.dashboard-module-value {
+  justify-self: start;
+}
+
+[dir="rtl"] .dashboard-module-meta,
+[dir="rtl"] .dashboard-module-value {
+  justify-self: end;
+}
+
+.dashboard-module-meta {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.dashboard-module-value {
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.dashboard-module-title {
+  padding-top: 0;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.dashboard-module-label {
+  color: var(--text-secondary);
+  font-weight: 650;
+}
+
+.dashboard-choice-backdrop {
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(10px);
+}
+
+.dashboard-choice-modal {
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-xl);
+}
+
+.dashboard-choice-modal h2 {
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.dashboard-choice-modal button {
+  min-height: 44px;
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  background: var(--primary);
+  font-weight: 820;
+}
+
+.dashboard-choice-modal button.muted {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+}

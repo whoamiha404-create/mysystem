@@ -56,6 +56,7 @@ const api = {
 
   // Users
   getUsers:      ()            => request('GET',  '/users'),
+  getUserReports:()            => request('GET',  '/users/reports'),
   createUser:    (data)        => request('POST', '/users',           data),
   updateUser:    (id, data)    => request('PUT',  `/users/${id}`,     data),
   deleteUser:    (id)          => request('DELETE',`/users/${id}`),
@@ -69,6 +70,8 @@ const api = {
   waSend:        (phone, msg, img)        => request('POST', '/whatsapp/send',   { phone, message: msg, withImage: img }),
   waRemind:      (tid, img)               => request('POST', `/whatsapp/remind/${tid}`, { withImage: img }),
   waRemindAll:   (img)                    => request('POST', '/whatsapp/remind-all', { withImage: img }),
+  waRenewal:     (tid, img=false)         => request('POST', `/whatsapp/renewal/${tid}`, { withImage: img }),
+  waRenewalAll:  (days=7, img=false)      => request('POST', '/whatsapp/renewal-all', { days, withImage: img }),
   waUploadImage: (formData)               => uploadFile('/whatsapp/image', formData),
   waDeleteImage: ()                       => request('DELETE', '/whatsapp/image'),
 

@@ -564,3 +564,126 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Premium ankets workspace */
+.anket-page {
+  gap: 24px;
+}
+
+.anket-header h1 {
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 850;
+  text-transform: none;
+}
+
+.anket-breadcrumb {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.anket-panel {
+  padding: 18px 18px 30px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--primary-light) 30%, var(--bg));
+  box-shadow: var(--shadow-sm);
+}
+
+.anket-strip-title {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: 850;
+}
+
+.anket-wide-field,
+.anket-field {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.anket-field input,
+.anket-field select,
+.anket-wide-field input {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.anket-field input:focus,
+.anket-field select:focus,
+.anket-wide-field input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.anket-actions {
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.anket-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 118px;
+  min-height: 40px;
+  border-radius: 11px;
+  font-weight: 820;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.anket-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.anket-save {
+  background: var(--primary);
+}
+
+.anket-new {
+  background: var(--text-secondary);
+}
+
+.anket-history,
+.anket-preview-modal,
+.anket-history-card,
+.anket-preview-field {
+  border-color: var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.anket-history-head,
+.anket-history-toolbar,
+.anket-preview-actions {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg-soft));
+}
+
+.anket-history-head h2 {
+  font-weight: 850;
+}
+
+.anket-history-search input {
+  border-radius: 12px;
+}
+
+.anket-history-card {
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+.anket-history-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+  box-shadow: var(--shadow-md);
+}

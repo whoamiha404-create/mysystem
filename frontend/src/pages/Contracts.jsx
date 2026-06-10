@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Edit3, Eye, FilePlus, Printer, Search, Trash2, X } from 'lucide-react';
+import { Edit3, Eye, FilePlus, Printer, Save, Search, Trash2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
@@ -1638,9 +1638,18 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
           )}
 
           <div className="contract-actions">
-            <button type="button" className="btn btn-primary" onClick={save}>{text.save} ▣</button>
-            <button type="button" className="btn" onClick={printCurrent}>{text.print}</button>
-            <button type="button" className="btn contract-new-page" onClick={reset}>{text.newPage} ◫</button>
+            <button type="button" className="btn btn-primary" onClick={save}>
+              <Save size={16} />
+              {text.save}
+            </button>
+            <button type="button" className="btn" onClick={printCurrent}>
+              <Printer size={16} />
+              {text.print}
+            </button>
+            <button type="button" className="btn contract-new-page" onClick={reset}>
+              <FilePlus size={16} />
+              {text.newPage}
+            </button>
           </div>
         </div>
       </section>

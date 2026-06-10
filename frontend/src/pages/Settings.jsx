@@ -17,9 +17,30 @@ export default function Settings() {
   useEffect(() => { api.getSettings().then(s=>{setSettings(s);setLoading(false);}); }, []);
   function set(k,v) { setSettings(s=>({...s,[k]:v})); }
 
+  function chooseLogo(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const isSupportedImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg|bmp|avif|heic|heif|ico)$/i.test(file.name);
+    if (!isSupportedImage) {
+      toast('Image only', 'error');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast('Logo image must be under 15MB', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => set('appLogo', reader.result);
+    reader.readAsDataURL(file);
+  }
+
   async function saveGeneral() {
     setSaving('general');
-    try { await api.saveSettings(settings); toast(t('saveSettings')+' ','success'); }
+    try {
+      await api.saveSettings(settings);
+      window.dispatchEvent(new Event('rentpro-settings-updated'));
+      toast(t('saveSettings')+' ','success');
+    }
     catch(e) { toast(e.message,'error'); } finally { setSaving(false); }
   }
 
@@ -50,6 +71,21 @@ export default function Settings() {
             <div className="form-grid" style={{gridTemplateColumns:'1fr'}}>
               <div className="form-group"><label>{t('appName')}</label><input value={settings.appName||''} onChange={e=>set('appName',e.target.value)} /></div>
               <div className="form-group"><label>{t('companyName')}</label><input value={settings.companyName||''} onChange={e=>set('companyName',e.target.value)} /></div>
+              <div className="form-group">
+                <label>{t('appLogo')}</label>
+                <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                  <div style={{width:58,height:58,borderRadius:12,border:'1px dashed var(--border)',background:'transparent',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+                    {settings.appLogo ? <img src={settings.appLogo} alt="Logo preview" style={{width:'100%',height:'100%',objectFit:'contain'}} /> : null}
+                  </div>
+                  <label className="btn btn-secondary" style={{cursor:'pointer'}}>
+                    {t('chooseLogo')}
+                    <input type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.svg,.bmp,.avif,.heic,.heif,.ico" onChange={chooseLogo} style={{display:'none'}} />
+                  </label>
+                  {settings.appLogo && (
+                    <button type="button" className="btn btn-ghost" onClick={() => set('appLogo', '')}>{t('removeLogo')}</button>
+                  )}
+                </div>
+              </div>
               <div className="form-group"><label>{t('contractCoordinator')}</label><input value={settings.contractCoordinator||''} onChange={e=>set('contractCoordinator',e.target.value)} /></div>
               <div className="form-group">
                 <label>{t('currency')}</label>
@@ -108,11 +144,12 @@ export default function Settings() {
           <div className="card-body">
             <div className="alert alert-blue" style={{marginBottom:16}}>
               <Info size={16} />
-              <span>{t('availableVars')}: <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{name}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{apt}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{rent}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{currency}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{payDay}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{days}}'}</code></span>
+              <span>{t('availableVars')}: <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{name}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{apt}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{rent}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{currency}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{payDay}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{days}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{contractEnd}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{company}}'}</code></span>
             </div>
             <div className="form-grid" style={{gridTemplateColumns:'1fr 1fr'}}>
               <div className="form-group"><label>{t('reminderMsg')}</label><textarea rows={6} value={settings.msgReminder||''} onChange={e=>set('msgReminder',e.target.value)} /></div>
               <div className="form-group"><label>{t('lateMsg')}</label><textarea rows={6} value={settings.msgLate||''} onChange={e=>set('msgLate',e.target.value)} /></div>
+              <div className="form-group span-2"><label>{t('renewalMsg')}</label><textarea rows={5} value={settings.msgRenewal||''} onChange={e=>set('msgRenewal',e.target.value)} /></div>
             </div>
             <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
               <button className="btn btn-primary" onClick={saveGeneral} disabled={saving==='general'}>{saving==='general'?'...':t('saveTemplates')}</button>

@@ -20,3 +20,29 @@
   .app-main { margin-left: 0; }
   .page-content { padding: 20px 16px; }
 }
+
+/* Premium shell spacing */
+.app-main {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 34rem),
+    var(--bg);
+}
+
+.page-content {
+  padding: 30px 36px 42px;
+}
+
+[dir="rtl"] .app-main {
+  margin-left: 0;
+  margin-right: var(--sidebar-width);
+}
+
+@media (max-width: 900px) {
+  .page-content {
+    padding: 22px 16px 30px;
+  }
+
+  [dir="rtl"] .app-main {
+    margin-right: 0;
+  }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ClipboardList, CreditCard, FileText, Home, MessageCircle, Package, ReceiptText, Settings, UserRound, UsersRound } from 'lucide-react';
+import { BarChart3, ClipboardList, CreditCard, FileText, HandCoins, Home, Package, ReceiptText, UserRound, ClipboardCheck } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -34,7 +34,6 @@ export default function Dashboard() {
   const [receipts, setReceipts] = useState([]);
   const [users, setUsers] = useState([]);
   const [settings, setSettings] = useState({});
-  const [waState, setWaState] = useState('offline');
   const [receiptChoiceOpen, setReceiptChoiceOpen] = useState(false);
   const [anketChoiceOpen, setAnketChoiceOpen] = useState(false);
   const choiceText = CHOICE_TEXT[lang] || CHOICE_TEXT.en;
@@ -59,14 +58,12 @@ export default function Dashboard() {
       api.getExpenses(),
       api.getReceipts(),
       api.getSettings(),
-      api.waStatus(),
       userRequest,
-    ]).then(([tn, ex, rc, st, wa, us]) => {
+    ]).then(([tn, ex, rc, st, us]) => {
       setTenants(readResult(tn, []));
       setExpenses(readResult(ex, []));
       setReceipts(readResult(rc, []));
       setSettings(readResult(st, {}));
-      setWaState(readResult(wa, { state:'offline' })?.state || 'offline');
       setUsers(readResult(us, []));
     }).finally(() => setLoading(false));
   }, [user?.role]);
@@ -119,11 +116,50 @@ export default function Dashboard() {
       },
       {
         to: '/receipts',
-        receiptChoice: true,
         icon: ReceiptText,
-        title: t('receipts'),
+        title: t('receiveReceipts'),
         meta: t('tenantPaymentReceipts'),
         value: receipts.length,
+        valueLabel: t('savedRecords'),
+      },
+      {
+        to: '/give-receipts',
+        icon: HandCoins,
+        title: t('giveReceipts'),
+        meta: t('ownerPayoutReceipts'),
+        value: receipts.filter(receipt => String(receipt.receipt_no || '').startsWith('G-')).length,
+        valueLabel: t('savedRecords'),
+      },
+      {
+        to: '/contracts/sell',
+        icon: FileText,
+        title: t('sellContract'),
+        meta: t('contractShortcut'),
+        value: '-',
+        valueLabel: t('savedRecords'),
+      },
+      {
+        to: '/contracts/rent',
+        icon: ClipboardList,
+        title: t('rentContract'),
+        meta: t('contractShortcut'),
+        value: '-',
+        valueLabel: t('savedRecords'),
+      },
+      {
+        to: '/ankets/security',
+        icon: FileText,
+        title: choiceText.securityAnket,
+        meta: t('anketsMeta'),
+        value: '-',
+        valueLabel: t('savedRecords'),
+      },
+      {
+        to: '/ankets/project',
+        icon: FileText,
+        title: choiceText.projectAnket,
+        meta: t('anketsMeta'),
+        value: '-',
         valueLabel: t('savedRecords'),
       },
       {
@@ -142,39 +178,21 @@ export default function Dashboard() {
         value: summary.paid.length,
         valueLabel: t('paidPayments'),
       },
-      {
-        to: '/whatsapp',
-        icon: MessageCircle,
-        title: t('whatsapp'),
-        meta: waState === 'ready' ? t('connected') : t('scanQRCode'),
-        value: waState === 'ready' ? t('waReadyShort') : t('waQrShort'),
-        valueLabel: t('connectionStatus'),
-      },
     ];
 
-    if (['developer', 'admin'].includes(user?.role)) {
-      baseCards.push(
-        {
-          to: '/users',
-          icon: UsersRound,
-          title: t('users'),
-          meta: t('usersSub'),
-          value: users.length,
-          valueLabel: t('users'),
-        },
-        {
-          to: '/settings',
-          icon: Settings,
-          title: t('settings'),
-          meta: t('settingsSub'),
-          value: settings.currency || 'USD',
-          valueLabel: t('currency'),
-        }
-      );
+    if (user?.role === 'admin') {
+      baseCards.push({
+        to: '/agent-reports',
+        icon: ClipboardCheck,
+        title: t('agentReports'),
+        meta: t('agentReportsSub'),
+        value: users.length,
+        valueLabel: t('agent'),
+      });
     }
 
     return baseCards;
-  }, [expenses.length, receipts, settings.currency, summary, t, tenants.length, user?.role, users.length, waState]);
+  }, [choiceText.projectAnket, choiceText.securityAnket, expenses.length, receipts, summary, t, tenants.length, user?.role, users.length]);
 
   const quickCards = [
     { to:'/contracts/sell/new', icon:FileText, title:t('sellContract'), meta:t('contractShortcut') },
@@ -192,7 +210,7 @@ export default function Dashboard() {
       <div className="dashboard-hub-header">
         <div>
           <p className="dashboard-eyebrow">HOPEZONE REAL ESTATE</p>
-          <h1>{t('dashboard')}</h1>
+          <h1>{t('home')}</h1>
         </div>
         <div className="dashboard-date">{new Date().toISOString().slice(0, 10)}</div>
       </div>

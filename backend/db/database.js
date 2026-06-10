@@ -145,9 +145,11 @@ setSetting('contractCoordinator', '');
 setSetting('currency',     process.env.CURRENCY  || 'USD');
 setSetting('timezone',     process.env.TIMEZONE  || 'Asia/Baghdad');
 setSetting('reminderDays', JSON.stringify([5, 3, 1]));
+setSetting('renewalReminderDays', JSON.stringify([5, 3, 1]));
 setSetting('scheduleHour', '9');
 setSetting('msgReminder',  `🏠 *Rent Reminder*\n\nHello *{{name}}*,\n\nYour rent of *{{currency}}{{rent}}* for *{{apt}}* is due in *{{days}} day(s)* (on the *{{payDay}}* of this month).\n\nPlease pay on time.\n\nThank you! 🙏`);
 setSetting('msgLate',      `⚠️ *Late Payment Alert*\n\nHello *{{name}}*,\n\nYou have *{{count}} overdue payment(s)* for *{{apt}}*.\n\nMonthly rent: *{{currency}}{{rent}}*\n\nPlease contact us immediately.\n\nThank you! 🙏`);
+setSetting('msgRenewal',   `سڵاو {{name}}، بەرواری نوێکردنەوەی گرێبەستی کرێ بۆ {{apt}} نزیکە. کۆتایی گرێبەست: {{contractEnd}} ({{days}} ڕۆژ ماوە). تکایە بۆ نوێکردنەوە و پارەدانی تێچووی نوێکردنەوە/باج سەردانمان بکە. {{company}}`);
 
 // ── Seed admin user ──────────────────────────────────────────────────
 const developerExists = db.prepare(`SELECT id FROM users WHERE role = 'developer' LIMIT 1`).get();

@@ -64,3 +64,127 @@
 
 .mb-4 { margin-bottom: 16px; }
 .flex-wrap { flex-wrap: wrap; }
+
+.payment-summary-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+
+.payment-search {
+  min-width:280px;
+  max-width:420px;
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--bg-card);
+  padding:0 12px;
+}
+
+.payment-search input {
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  min-height:42px;
+  padding-inline:0;
+}
+
+.payment-layout {
+  display:grid;
+  grid-template-columns:minmax(520px, 1.15fr) minmax(420px, 0.85fr);
+  gap:18px;
+  align-items:start;
+}
+
+.payment-tenant-panel,
+.payment-detail-panel {
+  overflow:hidden;
+}
+
+.payment-row-selected {
+  background:var(--primary-dim) !important;
+  box-shadow:inset 3px 0 0 var(--primary);
+}
+
+[dir="rtl"] .payment-row-selected {
+  box-shadow:inset -3px 0 0 var(--primary);
+}
+
+.payment-mini-status {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+@media (max-width:1180px) {
+  .payment-layout { grid-template-columns:1fr; }
+}
+
+@media (max-width:640px) {
+  .payment-search { min-width:100%; }
+}
+
+/* Premium payment workspace */
+.payment-summary-row {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.payment-search {
+  min-height: 46px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.payment-search input {
+  min-height: 44px;
+}
+
+.payment-layout {
+  gap: 20px;
+}
+
+.payment-tenant-panel,
+.payment-detail-panel {
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.payment-row-selected {
+  background: var(--primary-light) !important;
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+[dir="rtl"] .payment-row-selected {
+  box-shadow: inset -4px 0 0 var(--primary);
+}
+
+.payment-mini-status .badge {
+  text-transform: none;
+}
+
+.pay-accordion {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.pay-accordion.border-amber,
+.pay-accordion.border-green {
+  border-left-width: 4px;
+}
+
+.pay-accordion-header {
+  background: var(--surface);
+}
+
+.pay-accordion-header:hover {
+  background: var(--primary-light);
+}

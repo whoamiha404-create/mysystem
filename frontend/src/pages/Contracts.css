@@ -2,6 +2,188 @@
   color: var(--text-primary);
 }
 
+/* Premium contracts workspace - screen only */
+@media screen {
+  .contract-page-head {
+    margin-bottom: 24px;
+  }
+
+  .contract-page-head h1 {
+    font-size: clamp(26px, 2.6vw, 34px);
+    font-weight: 850;
+    text-transform: none;
+  }
+
+  .contract-breadcrumb {
+    color: var(--text-secondary);
+    font-weight: 700;
+  }
+
+  .contract-panel {
+    padding: 18px 22px 30px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--primary-light) 30%, var(--bg));
+    box-shadow: var(--shadow-sm);
+  }
+
+  .contract-tabs {
+    gap: 4px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .contract-tabs button {
+    min-height: 40px;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 760;
+  }
+
+  .contract-tabs button:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .contract-tabs button.active {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .contract-inner h2 {
+    min-height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .contract-field-row label {
+    color: var(--text-primary);
+    font-weight: 800;
+  }
+
+  .contract-field-row input,
+  .contract-field-row select,
+  .contract-input-wrap,
+  .contract-input-wrap input,
+  .contract-dropdown-control {
+    min-height: 42px;
+    border-color: var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .contract-field-row input:focus,
+  .contract-field-row select:focus,
+  .contract-input-wrap:focus-within,
+  .contract-dropdown.open .contract-dropdown-control {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+
+  .contract-input-wrap input {
+    border-radius: 9px;
+    background: var(--bg-input);
+  }
+
+  .contract-input-info {
+    color: var(--text-secondary);
+  }
+
+  .contract-dropdown-control {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .contract-dropdown-menu {
+    top: calc(100% + 8px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden auto;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .contract-dropdown-menu button {
+    min-height: 40px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-weight: 780;
+  }
+
+  .contract-dropdown-menu button:hover,
+  .contract-dropdown-menu button.selected {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .contract-actions {
+    gap: 14px;
+    margin-top: 38px;
+  }
+
+  .contract-actions .btn {
+    min-width: 118px;
+    text-transform: none;
+  }
+
+  .contract-new-page {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+
+  .contract-new-page:hover:not(:disabled) {
+    background: var(--primary-light);
+    border-color: var(--primary-dim);
+    color: var(--primary);
+  }
+
+  .contract-history,
+  .contract-history-shell,
+  .contract-list,
+  .contract-preview-pane,
+  .contract-preview-modal,
+  .contract-saved-card,
+  .contract-card,
+  .contract-list-row {
+    border-color: var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .contract-history-head,
+  .contract-toolbar,
+  .contract-preview-toolbar {
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--surface) 88%, var(--bg-soft));
+  }
+
+  .contract-history-search input {
+    border-radius: 12px;
+  }
+
+  .contract-history-item,
+  .contract-saved-card,
+  .contract-card {
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  }
+
+  .contract-history-item:hover,
+  .contract-saved-card:hover,
+  .contract-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+    box-shadow: var(--shadow-md);
+  }
+}
+
 .contract-page-head {
   display: flex;
   align-items: center;
@@ -1397,5 +1579,119 @@
 
   .sell-paper-signatures {
     margin-top: 26px;
+  }
+}
+
+/* Final screen-only contract polish, placed after print rules for cascade priority. */
+@media screen {
+  .contract-page-head h1 { text-transform: none; font-size: clamp(26px, 2.6vw, 34px); font-weight: 850; }
+  .contract-panel {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--primary-light) 30%, var(--bg));
+    box-shadow: var(--shadow-sm);
+  }
+  .contract-tabs {
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  .contract-tabs button { min-height: 40px; border-radius: 10px; background: transparent; color: var(--text-secondary); font-weight: 760; }
+  .contract-tabs button:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .contract-tabs button.active { background: var(--primary-light); color: var(--primary); }
+  .contract-inner h2 {
+    min-height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  .contract-field-row input,
+  .contract-field-row select,
+  .contract-input-wrap,
+  .contract-input-wrap input,
+  .contract-dropdown-control {
+    min-height: 42px;
+    border-color: var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+  .contract-field-row input:focus,
+  .contract-field-row select:focus,
+  .contract-input-wrap:focus-within,
+  .contract-dropdown.open .contract-dropdown-control {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+  .contract-dropdown-menu {
+    top: calc(100% + 8px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+  }
+  .contract-dropdown-menu button { min-height: 40px; background: var(--surface); color: var(--text-primary); font-weight: 780; }
+  .contract-dropdown-menu button:hover,
+  .contract-dropdown-menu button.selected { background: var(--primary-light); color: var(--primary); }
+  .contract-new-page { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
+  .contract-new-page:hover:not(:disabled) { background: var(--primary-light); border-color: var(--primary-dim); color: var(--primary); }
+  .contract-history,
+  .contract-history-shell,
+  .contract-list,
+  .contract-preview-pane,
+  .contract-preview-modal,
+  .contract-saved-card,
+  .contract-card,
+  .contract-list-row {
+    border-color: var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  .contract-history-head,
+  .contract-toolbar,
+  .contract-preview-toolbar {
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--surface) 88%, var(--bg-soft));
+  }
+
+  .contract-breadcrumb,
+  .contract-history-card p,
+  .contract-history-meta,
+  .contract-preview-toolbar,
+  .contract-card small {
+    color: var(--text-secondary);
+  }
+
+  .contract-actions {
+    gap: 14px;
+    margin-top: 38px;
+  }
+
+  .contract-actions .btn {
+    min-width: 118px;
+    text-transform: none;
+  }
+
+  .contract-history-search input,
+  .contract-search input {
+    border-radius: 12px;
+  }
+
+  .contract-history-item,
+  .contract-saved-card,
+  .contract-card {
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  }
+
+  .contract-history-item:hover,
+  .contract-saved-card:hover,
+  .contract-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+    box-shadow: var(--shadow-md);
   }
 }

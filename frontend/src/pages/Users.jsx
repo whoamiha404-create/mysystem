@@ -11,6 +11,7 @@ const EMPTY = { name:'', username:'', password:'', role:'agent', phone:'', email
 export default function Users() {
   const { t } = useLanguage();
   const [users,   setUsers]   = useState([]);
+  const [adminCounts, setAdminCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [modal,   setModal]   = useState(null);
   const [editing, setEditing] = useState(null);
@@ -21,13 +22,25 @@ export default function Users() {
   const isDeveloper = me?.role === 'developer';
   const isManager = isDeveloper || me?.role === 'admin';
   const roleOptions = isDeveloper
-    ? [{ value:'agent', label:t('agent') }, { value:'admin', label:t('ownerRole') || t('adminRole') }]
+    ? [{ value:'admin', label:t('ownerRole') || t('adminRole') }]
     : [{ value:'agent', label:t('agent') }];
 
-  const load = () => { api.getUsers().then(setUsers).finally(()=>setLoading(false)); };
-  useEffect(()=>{load();},[]);
+  const load = () => {
+    setLoading(true);
+    const request = isDeveloper ? api.getUserReports() : api.getUsers();
+    request.then(data => {
+      if (isDeveloper) {
+        setUsers(data.allUsers || []);
+        setAdminCounts(Object.fromEntries((data.admins || []).map(admin => [admin.id, admin.agent_count || 0])));
+      } else {
+        setUsers(data || []);
+        setAdminCounts({});
+      }
+    }).finally(()=>setLoading(false));
+  };
+  useEffect(()=>{load();},[isDeveloper]);
 
-  function openAdd()   { setForm({ ...EMPTY, role:'agent' }); setEditing(null); setModal('form'); }
+  function openAdd()   { setForm({ ...EMPTY, role:isDeveloper ? 'admin' : 'agent' }); setEditing(null); setModal('form'); }
   function openEdit(u) {
     if (u.role === 'developer' && u.id !== me?.id) return;
     setForm({name:u.name,username:u.username,password:'',role:u.role,phone:u.phone||'',email:u.email||''});
@@ -84,7 +97,20 @@ export default function Users() {
             : users.length===0
               ? <div className="empty-state"><div className="empty-icon"><UsersRound size={32} /></div><h3>{t('noUsers')}</h3></div>
               : <table>
-                  <thead><tr><th>{t('nameLabel')}</th><th>{t('username')}</th><th>{t('role')}</th><th>{t('email')}</th><th>{t('phone')}</th><th>{t('date')}</th><th>{t('actions')}</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>{t('nameLabel')}</th>
+                      <th>{t('username')}</th>
+                      <th>{t('role')}</th>
+                      {isDeveloper && <th>{t('createdBy')}</th>}
+                      {isDeveloper && <th>{t('createdAgents')}</th>}
+                      <th>{t('email')}</th>
+                      <th>{t('phone')}</th>
+                      <th>{t('password')}</th>
+                      <th>{t('date')}</th>
+                      <th>{t('actions')}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {users.map(u=>(
                       <tr key={u.id}>
@@ -99,8 +125,11 @@ export default function Users() {
                         </td>
                         <td className="font-mono">{u.username}</td>
                         <td><span className={`badge ${u.role==='developer'?'badge-gray':u.role==='admin'?'badge-purple':'badge-blue'}`}>{roleLabel(u.role)}</span></td>
+                        {isDeveloper && <td style={{color:'var(--text-muted)'}}>{u.creator_name || (u.role === 'developer' ? t('youLabel') : '-')}</td>}
+                        {isDeveloper && <td style={{fontWeight:800}}>{u.role === 'admin' ? (adminCounts[u.id] || 0) : '-'}</td>}
                         <td style={{color:'var(--text-muted)'}}>{u.email||'—'}</td>
                         <td className="font-mono" style={{color:'var(--text-muted)'}}>{u.phone||'—'}</td>
+                        <td><span className="badge badge-gray">{t('passwordHidden')}</span></td>
                         <td style={{color:'var(--text-muted)',fontSize:'var(--text-xs)'}}>{u.created_at?.slice(0,10)}</td>
                         <td>
                           <div className="flex gap-2">
