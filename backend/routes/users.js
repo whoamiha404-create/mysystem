@@ -31,6 +31,7 @@ function userStats(userId) {
   const contracts = db.prepare(`SELECT * FROM contracts WHERE user_id = ? ORDER BY id DESC`).all(userId);
   const logs = db.prepare(`SELECT * FROM logs WHERE user_id = ? ORDER BY id DESC LIMIT 50`).all(userId);
   const expenses = db.prepare(`SELECT * FROM expenses WHERE user_id = ? ORDER BY date DESC`).all(userId);
+  const profits = db.prepare(`SELECT * FROM profits WHERE user_id = ? ORDER BY created_at DESC`).all(userId);
   const payments = db.prepare(`
     SELECT p.*, t.name AS tenant_name, t.apt
       FROM payments p
@@ -57,6 +58,8 @@ function userStats(userId) {
       rentContracts: rentContracts.length,
       expenses: expenses.length,
       expenseAmount: expenses.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+      profits: profits.length,
+      profitAmount: profits.reduce((sum, row) => sum + Number(row.amount || 0), 0),
       paidPayments: paidPayments.length,
       paidAmount: paidPayments.reduce((sum, row) => sum + Number(row.amount || 0), 0),
       pendingPayments: pendingPayments.length,
@@ -80,6 +83,7 @@ function userStats(userId) {
       };
     }),
     expenses,
+    profits,
     payments,
     logs,
   };

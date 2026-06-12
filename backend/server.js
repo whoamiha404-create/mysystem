@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { db, getSettings, addLog } = require('./db/database');
 const wa = require('./services/whatsapp');
+const notificationsRoute = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -24,6 +25,8 @@ app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/receipts', require('./routes/receipts'));
 app.use('/api/contracts', require('./routes/contracts'));
 app.use('/api/logs', require('./routes/logs'));
+app.use('/api/notifications', notificationsRoute);
+app.use('/api/profits', require('./routes/profits'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
@@ -64,6 +67,14 @@ function fillTemplate(template, values) {
 }
 
 function scheduleCron() {
+  cron.schedule('* * * * *', async () => {
+    try {
+      await notificationsRoute.processDueNotifications();
+    } catch (error) {
+      console.error('Notification scheduler failed:', error.message);
+    }
+  }, { timezone: process.env.TIMEZONE || 'Asia/Baghdad' });
+
   cron.schedule('0 * * * *', async () => {
     console.log('Running daily reminder check...');
     const users = db.prepare(`SELECT id FROM users`).all();

@@ -56,6 +56,26 @@ router.post('/', auth, (req, res) => {
   if (!values || typeof values !== 'object') return res.status(400).json({ error: 'values required' });
 
   const meta = metaFrom(kind, values);
+  if (meta.contractNo) {
+    const existing = db.prepare(`
+      SELECT * FROM contracts
+       WHERE user_id = ? AND kind = ? AND contract_no = ?
+       ORDER BY id DESC
+       LIMIT 1
+    `).get(req.user.id, kind, meta.contractNo);
+
+    if (existing) {
+      db.prepare(`
+        UPDATE contracts
+           SET title = ?, contract_date = ?, price = ?,
+               values_json = ?, updated_at = datetime('now')
+         WHERE id = ? AND user_id = ?
+      `).run(meta.title, meta.contractDate, meta.price, JSON.stringify(values), existing.id, req.user.id);
+
+      return res.json(serialize(db.prepare(`SELECT * FROM contracts WHERE id = ? AND user_id = ?`).get(existing.id, req.user.id)));
+    }
+  }
+
   const result = db.prepare(`
     INSERT INTO contracts (kind, title, contract_no, contract_date, price, values_json, user_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)

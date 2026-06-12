@@ -117,6 +117,41 @@ db.exec(`
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    title         TEXT NOT NULL,
+    message       TEXT NOT NULL,
+    sender_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    target_all    INTEGER NOT NULL DEFAULT 0,
+    scheduled_at  TEXT DEFAULT '',
+    send_whatsapp INTEGER NOT NULL DEFAULT 0,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS notification_recipients (
+    notification_id INTEGER NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    read_at         TEXT DEFAULT '',
+    whatsapp_sent   INTEGER NOT NULL DEFAULT 0,
+    whatsapp_error  TEXT DEFAULT '',
+    PRIMARY KEY (notification_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS profits (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    contract_id   INTEGER,
+    contract_kind TEXT DEFAULT '',
+    contract_title TEXT DEFAULT '',
+    contract_no   TEXT DEFAULT '',
+    contract_date TEXT DEFAULT '',
+    source        TEXT DEFAULT 'contract',
+    amount        REAL NOT NULL DEFAULT 0,
+    currency      TEXT DEFAULT 'USD',
+    notes         TEXT DEFAULT '',
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 function ensureColumn(table, column, definition) {
@@ -157,13 +192,6 @@ if (!developerExists) {
   const hash = bcrypt.hashSync(process.env.DEVELOPER_PASS || 'developer123', 10);
   db.prepare(`INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, 'developer')`)
     .run('Developer', process.env.DEVELOPER_USER || 'developer', hash);
-}
-
-const adminExists = db.prepare(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`).get();
-if (!adminExists) {
-  const hash = bcrypt.hashSync(process.env.ADMIN_PASS || 'admin123', 10);
-  db.prepare(`INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, 'admin')`)
-    .run('Administrator', process.env.ADMIN_USER || 'admin', hash);
 }
 
 const legacyOwner = db.prepare(`SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1`).get();
