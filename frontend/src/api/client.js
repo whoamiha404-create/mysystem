@@ -88,6 +88,24 @@ const api = {
   updateContract:(id, data)    => request('PUT', `/contracts/${id}`, data),
   deleteContract:(id)          => request('DELETE', `/contracts/${id}`),
 
+  // Notifications
+  getNotificationAgents: ()    => request('GET', '/notifications/agents'),
+  getNotifications: ()         => request('GET', '/notifications'),
+  getNotificationUnreadCount: () => request('GET', '/notifications/unread-count'),
+  createNotification: (data)   => request('POST', '/notifications', data),
+  markNotificationRead: (id)   => request('PUT', `/notifications/${id}/read`),
+
+  // Profits
+  getProfits: (params={})      => {
+    const qs = new URLSearchParams(params);
+    return request('GET', `/profits${qs.toString() ? `?${qs}` : ''}`);
+  },
+  getPendingProfitContracts: (params={}) => {
+    const qs = new URLSearchParams(params);
+    return request('GET', `/profits/pending-contracts${qs.toString() ? `?${qs}` : ''}`);
+  },
+  createProfit: (data)         => request('POST', '/profits', data),
+
   // Logs
   getLogs:       (limit, all=false) => {
     const params = new URLSearchParams();

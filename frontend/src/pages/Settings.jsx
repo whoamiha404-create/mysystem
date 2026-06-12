@@ -63,7 +63,7 @@ export default function Settings() {
         <p>{t('settingsSub')}</p>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'start'}}>
+      <div className="settings-layout-grid">
         {/* General */}
         <div className="card">
           <div className="card-header"><h3>{t('businessSettings')}</h3></div>
@@ -146,7 +146,7 @@ export default function Settings() {
               <Info size={16} />
               <span>{t('availableVars')}: <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{name}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{apt}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{rent}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{currency}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{payDay}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{days}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{contractEnd}}'}</code> <code style={{background:'var(--bg)',padding:'2px 6px',borderRadius:4,fontSize:'var(--text-xs)'}}>{'{{company}}'}</code></span>
             </div>
-            <div className="form-grid" style={{gridTemplateColumns:'1fr 1fr'}}>
+            <div className="form-grid settings-template-grid">
               <div className="form-group"><label>{t('reminderMsg')}</label><textarea rows={6} value={settings.msgReminder||''} onChange={e=>set('msgReminder',e.target.value)} /></div>
               <div className="form-group"><label>{t('lateMsg')}</label><textarea rows={6} value={settings.msgLate||''} onChange={e=>set('msgLate',e.target.value)} /></div>
               <div className="form-group span-2"><label>{t('renewalMsg')}</label><textarea rows={5} value={settings.msgRenewal||''} onChange={e=>set('msgRenewal',e.target.value)} /></div>

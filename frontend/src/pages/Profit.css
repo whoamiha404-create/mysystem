@@ -1,0 +1,152 @@
+.profit-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profit-filters {
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.profit-page .card {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.profit-page .card-header {
+  border-radius: 18px 18px 0 0;
+}
+
+.profit-page .table-wrap {
+  border-radius: 0 0 18px 18px;
+  overflow: auto;
+}
+
+.profit-page table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.profit-page thead th:first-child {
+  border-start-start-radius: 14px;
+}
+
+.profit-page thead th:last-child {
+  border-start-end-radius: 14px;
+}
+
+.profit-filter-button {
+  justify-content: flex-end;
+  align-self: end;
+}
+
+.profit-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.profit-money {
+  color: var(--success);
+  font-weight: 900;
+}
+
+.profit-pending-card {
+  margin-bottom: 20px;
+}
+
+.profit-contract-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.profit-contract-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text-primary);
+  text-align: start;
+  cursor: pointer;
+  transition: transform var(--transition), border-color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+
+.profit-contract-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary-light) 34%, var(--surface));
+  box-shadow: var(--shadow-md);
+}
+
+.profit-contract-card strong,
+.profit-contract-card small,
+.profit-contract-card b {
+  display: block;
+}
+
+.profit-contract-card small {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.profit-contract-card b {
+  color: var(--success);
+  font-size: var(--text-md);
+}
+
+.profit-target-summary {
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-hover);
+}
+
+.profit-target-summary strong,
+.profit-target-summary span {
+  display: block;
+}
+
+.profit-target-summary span {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-weight: 750;
+}
+
+.profit-empty {
+  min-height: 120px;
+}
+
+@media print {
+  .profit-actions,
+  .profit-filters,
+  .sidebar,
+  .mobile-topbar {
+    display: none !important;
+  }
+
+  .app-main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .profit-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .profit-contract-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

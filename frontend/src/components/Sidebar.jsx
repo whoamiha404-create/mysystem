@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
+  Bell,
   CalendarClock,
   ChevronRight,
   ClipboardList,
@@ -18,6 +19,7 @@ import {
   ClipboardCheck,
   UserRound,
   UsersRound,
+  WalletMinimal,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,7 +31,7 @@ import './Sidebar.css';
 const ICON_SIZE = 17;
 const SUB_ICON_SIZE = 15;
 
-export default function Sidebar({ waState }) {
+export default function Sidebar({ waState, mobileOpen = false, onNavigate = () => {} }) {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { isDark, toggle } = useTheme();
@@ -42,6 +44,7 @@ export default function Sidebar({ waState }) {
   const [anketsOpen, setAnketsOpen] = useState(() => location.pathname.startsWith('/ankets'));
   const anketsActive = location.pathname.startsWith('/ankets');
   const [settings, setSettings] = useState({});
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const isDeveloper = user?.role === 'developer';
   const isAdmin = user?.role === 'admin';
   const canManageCompany = isDeveloper || isAdmin;
@@ -60,6 +63,24 @@ export default function Sidebar({ waState }) {
       window.removeEventListener('rentpro-settings-updated', loadSettings);
     };
   }, []);
+
+  useEffect(() => {
+    if (isDeveloper) return undefined;
+    let alive = true;
+    const loadUnread = () => {
+      api.getNotificationUnreadCount()
+        .then(data => { if (alive) setUnreadNotifications(Number(data.count || 0)); })
+        .catch(() => {});
+    };
+    loadUnread();
+    const interval = setInterval(loadUnread, 30000);
+    window.addEventListener('rentpro-notifications-updated', loadUnread);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+      window.removeEventListener('rentpro-notifications-updated', loadUnread);
+    };
+  }, [isDeveloper]);
 
   useEffect(() => {
     if (contractsActive) setContractsOpen(true);
@@ -90,6 +111,8 @@ export default function Sidebar({ waState }) {
     { to:'/payments', icon:CreditCard, key:'payments' },
   ];
   const afterDropdownNav = [
+    { to:'/notifications', icon:Bell, key:'notifications', badge: unreadNotifications },
+    { to:'/profit', icon:WalletMinimal, key:'profit' },
     { to:'/expenses', icon:Package, key:'expenses' },
     { to:'/reports', icon:BarChart3, key:'reports' },
     { to:'/whatsapp', icon:MessageCircle, key:'whatsapp' },
@@ -133,7 +156,7 @@ export default function Sidebar({ waState }) {
   const appName = (settings.appName || '').trim();
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-logo_sidabar">
         <div className={`sidebar-logo-icon_siddar ${settings.appLogo ? '' : 'is-empty'}`}>
           {settings.appLogo && <img src={settings.appLogo} alt={companyName || 'Company logo'} />}
@@ -148,7 +171,8 @@ export default function Sidebar({ waState }) {
         <div className="sidebar-section-label">{t('main')}</div>
         {nav.map(item => (
           <NavLink key={item.to} to={item.to} end={!!item.end}
-            className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+            className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
+            onClick={onNavigate}>
             <span className="sidebar-icon"><item.icon size={ICON_SIZE} strokeWidth={2.25} /></span>
             <span className="sidebar-label">{t(item.key)}</span>
             {item.to === '/whatsapp' && <span className={`sidebar-dot ${waDot}`}></span>}
@@ -170,7 +194,8 @@ export default function Sidebar({ waState }) {
               <div className="sidebar-subgroup">
                 {receiptNav.map(item => (
                   <NavLink key={item.to} to={item.to}
-                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
+                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}
+                    onClick={onNavigate}>
                     <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
                     <span className="sidebar-label">{t(item.key)}</span>
                   </NavLink>
@@ -192,7 +217,8 @@ export default function Sidebar({ waState }) {
               <div className="sidebar-subgroup">
                 {contractNav.map(item => (
                   <NavLink key={item.to} to={item.to}
-                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
+                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}
+                    onClick={onNavigate}>
                     <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
                     <span className="sidebar-label">{t(item.key)}</span>
                   </NavLink>
@@ -214,7 +240,8 @@ export default function Sidebar({ waState }) {
               <div className="sidebar-subgroup">
                 {anketNav.map(item => (
                   <NavLink key={item.to} to={item.to}
-                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}>
+                    className={({ isActive }) => `sidebar-item sidebar-subitem ${isActive ? 'active' : ''}`}
+                    onClick={onNavigate}>
                     <span className="sidebar-icon"><item.icon size={SUB_ICON_SIZE} strokeWidth={2.25} /></span>
                     <span className="sidebar-label">{item.label}</span>
                   </NavLink>
@@ -224,9 +251,11 @@ export default function Sidebar({ waState }) {
 
             {afterDropdownNav.map(item => (
               <NavLink key={item.to} to={item.to}
-                className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+                className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
+                onClick={onNavigate}>
                 <span className="sidebar-icon"><item.icon size={ICON_SIZE} strokeWidth={2.25} /></span>
                 <span className="sidebar-label">{t(item.key)}</span>
+                {!!item.badge && <span className="sidebar-badge">{item.badge}</span>}
                 {item.to === '/whatsapp' && <span className={`sidebar-dot ${waDot}`}></span>}
               </NavLink>
             ))}
@@ -238,7 +267,8 @@ export default function Sidebar({ waState }) {
             <div className="sidebar-section-label" style={{ marginTop:16 }}>{t('adminSection')}</div>
             {adminNav.map(item => (
               <NavLink key={item.to} to={item.to}
-                className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+                className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
+                onClick={onNavigate}>
                 <span className="sidebar-icon"><item.icon size={ICON_SIZE} strokeWidth={2.25} /></span>
                 <span className="sidebar-label">{t(item.key)}</span>
               </NavLink>

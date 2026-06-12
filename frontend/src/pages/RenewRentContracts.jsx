@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarClock, CheckCircle2, RefreshCw, Search, Send } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CheckCircle2, RefreshCw, Search, Send, WalletMinimal } from 'lucide-react';
 import api from '../api/client';
+import Modal from '../components/Modal';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 
@@ -32,6 +33,8 @@ export default function RenewRentContracts() {
   const [sending, setSending] = useState('');
   const [query, setQuery] = useState('');
   const [windowDays, setWindowDays] = useState(7);
+  const [profitRow, setProfitRow] = useState(null);
+  const [profitForm, setProfitForm] = useState({ amount: '', currency: 'USD', notes: '' });
 
   async function load() {
     setLoading(true);
@@ -89,6 +92,27 @@ export default function RenewRentContracts() {
     }
   }
 
+  async function saveProfit() {
+    try {
+      await api.createProfit({
+        contractKind: 'renew-rent',
+        contractTitle: profitRow?.name || '',
+        contractNo: profitRow?.apt || '',
+        contractDate: profitRow?.contract_end || new Date().toISOString().slice(0, 10),
+        amount: profitForm.amount,
+        currency: profitForm.currency,
+        notes: profitForm.notes,
+        source: 'renew-rent',
+      });
+      toast(t('recordProfit'), 'success');
+      setProfitRow(null);
+      setProfitForm({ amount: '', currency: 'USD', notes: '' });
+      window.dispatchEvent(new Event('rentpro-profit-updated'));
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
   function badgeFor(row) {
     if (row.days_left === null) return <span className="badge badge-gray">-</span>;
     if (row.days_left < 0) return <span className="badge badge-red">{t('expired')}</span>;
@@ -103,7 +127,7 @@ export default function RenewRentContracts() {
         <p>{t('renewRentContractsSub')}</p>
       </div>
 
-      <div className="stat-grid" style={{gridTemplateColumns:'repeat(3,minmax(180px,1fr))', marginBottom:20}}>
+      <div className="stat-grid renew-stat-grid">
         <div className="stat-card">
           <div className="stat-icon"><CalendarClock size={20} /></div>
           <div className="stat-label">{t('renewalDueSoon')}</div>
@@ -178,9 +202,14 @@ export default function RenewRentContracts() {
                   <td className="font-bold">{row.days_left ?? '-'}</td>
                   <td>{badgeFor(row)}</td>
                   <td>
-                    <button className="btn btn-primary btn-sm" onClick={() => sendOne(row)} disabled={sending === row.id || !row.phone}>
-                      <Send size={14} /> {sending === row.id ? '...' : t('sendRenewalReminder')}
-                    </button>
+                    <div className="flex gap-2">
+                      <button className="btn btn-primary btn-sm" onClick={() => sendOne(row)} disabled={sending === row.id || !row.phone}>
+                        <Send size={14} /> {sending === row.id ? '...' : t('sendRenewalReminder')}
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setProfitRow(row)}>
+                        <WalletMinimal size={14} /> {t('recordProfit')}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -203,6 +232,38 @@ export default function RenewRentContracts() {
         <div className="text-muted" style={{marginTop:12,fontSize:'var(--text-sm)'}}>
           {activeRows.length} {t('contract')} outside the reminder window.
         </div>
+      )}
+
+      {profitRow && (
+        <Modal
+          title={t('recordProfit')}
+          onClose={() => setProfitRow(null)}
+          size="sm"
+          footer={(
+            <>
+              <button className="btn btn-secondary" onClick={() => setProfitRow(null)}>{t('cancel')}</button>
+              <button className="btn btn-primary" onClick={saveProfit}>{t('save')}</button>
+            </>
+          )}
+        >
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="form-group">
+              <label>{t('profitAmount')}</label>
+              <input type="number" min="0" value={profitForm.amount} onChange={event => setProfitForm({ ...profitForm, amount: event.target.value })} autoFocus />
+            </div>
+            <div className="form-group">
+              <label>{t('profitCurrency')}</label>
+              <select value={profitForm.currency} onChange={event => setProfitForm({ ...profitForm, currency: event.target.value })}>
+                <option value="USD">dolar</option>
+                <option value="IQD">dinar iraqi</option>
+              </select>
+            </div>
+            <div className="form-group span-2">
+              <label>{t('notes')}</label>
+              <textarea rows={3} value={profitForm.notes} onChange={event => setProfitForm({ ...profitForm, notes: event.target.value })} />
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

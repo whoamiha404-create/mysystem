@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ClipboardList, CreditCard, FileText, HandCoins, Home, Package, ReceiptText, UserRound, ClipboardCheck } from 'lucide-react';
+import { BarChart3, Bell, ClipboardList, CreditCard, FileText, HandCoins, Home, Package, ReceiptText, UserRound, ClipboardCheck, WalletMinimal } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -115,6 +115,14 @@ export default function Dashboard() {
         valueLabel: t('paymentRecords'),
       },
       {
+        to: '/notifications',
+        icon: Bell,
+        title: t('notifications'),
+        meta: t('notificationsSub'),
+        value: '-',
+        valueLabel: t('unread'),
+      },
+      {
         to: '/receipts',
         icon: ReceiptText,
         title: t('receiveReceipts'),
@@ -169,6 +177,14 @@ export default function Dashboard() {
         meta: `${summary.currency}${summary.expenseTotal.toLocaleString()}`,
         value: expenses.length,
         valueLabel: t('expenseRecords'),
+      },
+      {
+        to: '/profit',
+        icon: WalletMinimal,
+        title: t('profit'),
+        meta: t('profitSub'),
+        value: `${summary.currency}${summary.netIncome.toLocaleString()}`,
+        valueLabel: t('netProfit'),
       },
       {
         to: '/reports',

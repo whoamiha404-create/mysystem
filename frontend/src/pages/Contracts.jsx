@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Edit3, Eye, FilePlus, Printer, Save, Search, Trash2, X } from 'lucide-react';
+import { Edit3, Eye, FilePlus, Printer, Search, Trash2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
@@ -1336,9 +1336,16 @@ function ContractLibrary({ kind, lang, text, title, isRtl }) {
     }
   }
 
-  function printContract(contract) {
+  function doPrintContract(contract) {
     setSelectedId(contract.id);
+    localStorage.setItem('rentpro-profit-contract', JSON.stringify({ id: contract.id, kind }));
+    const afterPrint = () => navigate('/profit');
+    window.addEventListener('afterprint', afterPrint, { once: true });
     setTimeout(() => window.print(), 0);
+  }
+
+  function printContract(contract) {
+    doPrintContract(contract);
   }
 
   return (
@@ -1541,8 +1548,33 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
     });
   };
   const reset = () => setValues(initialValues(fields, text, kind, lang));
-  const printCurrent = () => {
+  const printCurrent = async () => {
     setActiveTab('main');
+    let contractForProfit = savedContract;
+    const nextValues = {
+      ...values,
+      mainTerms: values.mainTerms?.length && values.mainTermsLang === lang && values.mainTermsVersion === TERMS_VERSION ? values.mainTerms : defaultTerms(kind, values, lang),
+      mainTermsLang: lang,
+      mainTermsVersion: TERMS_VERSION,
+      mainTermsTouched: !!values.mainTermsTouched,
+    };
+
+    try {
+      const saved = savedContract?.id
+        ? await api.updateContract(savedContract.id, { kind, values: nextValues })
+        : await api.createContract({ kind, values: nextValues });
+      contractForProfit = normalizeContract(saved, kind);
+      setSavedContract(contractForProfit);
+      localStorage.setItem(draftKey(kind), JSON.stringify(contractForProfit.values));
+    } catch (error) {
+      toast(error.message || text.saved, 'error');
+    }
+
+    if (contractForProfit?.id) {
+      localStorage.setItem('rentpro-profit-contract', JSON.stringify({ id: contractForProfit.id, kind }));
+    }
+    const afterPrint = () => navigate('/profit');
+    window.addEventListener('afterprint', afterPrint, { once: true });
     setTimeout(() => window.print(), 0);
   };
   const save = async () => {
@@ -1638,13 +1670,9 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
           )}
 
           <div className="contract-actions">
-            <button type="button" className="btn btn-primary" onClick={save}>
-              <Save size={16} />
-              {text.save}
-            </button>
-            <button type="button" className="btn" onClick={printCurrent}>
+            <button type="button" className="btn btn-primary" onClick={printCurrent}>
               <Printer size={16} />
-              {text.print}
+              {text.save} & {text.print}
             </button>
             <button type="button" className="btn contract-new-page" onClick={reset}>
               <FilePlus size={16} />

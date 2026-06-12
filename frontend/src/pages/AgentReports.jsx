@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, CreditCard, FileText, Loader2, ReceiptText, Search, UserRound, WalletCards } from 'lucide-react';
+import { Activity, CreditCard, Download, FileText, Loader2, Printer, ReceiptText, Search, TrendingUp, UserRound, WalletCards } from 'lucide-react';
 import api from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -19,6 +19,10 @@ const COPY = {
     paymentsTable: 'Payments',
     expensesTable: 'Expenses',
     activityTable: 'Activity',
+    profitReport: 'Profit Report',
+    profitAmount: 'Profit',
+    exportExcel: 'Download Excel',
+    print: 'Print',
     receiptNo: 'Receipt #',
     tenant: 'Tenant',
     amount: 'Amount',
@@ -153,6 +157,9 @@ export default function AgentReports() {
 
   const selected = agents.find(agent => Number(agent.id) === Number(selectedId)) || filteredAgents[0] || agents[0];
   const totals = selected?.totals || {};
+  const profitLabel = text.profitReport || t('profit');
+  const exportLabel = text.exportExcel || t('exportExcel');
+  const printLabel = text.print || t('print');
 
   const statCards = [
     { label: text.receiveReceipts, value: totals.receipts || 0, meta: fmtMoney(totals.receiptAmount), icon: ReceiptText, accent: '#2563eb', dim: 'var(--primary-dim)' },
@@ -160,9 +167,34 @@ export default function AgentReports() {
     { label: text.sellContracts, value: totals.sellContracts || 0, meta: text.contractsTable, icon: FileText, accent: '#d97706', dim: 'var(--warning-dim)' },
     { label: text.rentContracts, value: totals.rentContracts || 0, meta: text.contractsTable, icon: FileText, accent: '#059669', dim: 'var(--success-dim)' },
     { label: text.paidPayments, value: totals.paidPayments || 0, meta: fmtMoney(totals.paidAmount), icon: CreditCard, accent: '#0891b2', dim: 'var(--cyan-dim, #cffafe)' },
+    { label: profitLabel, value: totals.profits || 0, meta: fmtMoney(totals.profitAmount), icon: TrendingUp, accent: '#059669', dim: 'var(--success-dim)' },
     { label: text.expenses, value: totals.expenses || 0, meta: fmtMoney(totals.expenseAmount), icon: WalletCards, accent: '#dc2626', dim: 'var(--danger-dim)' },
     { label: text.activity, value: totals.activity || 0, meta: text.lastActivity, icon: Activity, accent: '#475569', dim: 'var(--bg-hover)' },
   ];
+
+  function exportProfitExcel() {
+    if (!selected) return;
+    const rows = [
+      [text.date, text.title, text.type, text.receiptNo, text.profitAmount || t('profitAmount'), t('currency'), text.description],
+      ...(selected.profits || []).map(row => [
+        row.created_at,
+        row.contract_title || '',
+        row.contract_kind || row.source || '',
+        row.contract_no || '',
+        row.amount || 0,
+        row.currency || 'USD',
+        row.notes || '',
+      ]),
+    ];
+    const html = `<table>${rows.map(row => `<tr>${row.map(cell => `<td>${String(cell ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')}</td>`).join('')}</tr>`).join('')}</table>`;
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `profit-report-${selected.username || selected.id}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   if (loading) {
     return (
@@ -294,6 +326,34 @@ export default function AgentReports() {
                           <td>{fmtMoney(row.amount)}</td>
                           <td><span className={`badge ${row.status === 'paid' ? 'badge-green' : row.status === 'late' ? 'badge-red' : 'badge-amber'}`}>{row.status || '-'}</span></td>
                           <td>{shortDate(row.paid_date || row.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="card agent-profit-report">
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <h2>{profitLabel}</h2>
+                  <div className="flex gap-2">
+                    <button className="btn btn-secondary btn-sm" onClick={() => window.print()}><Printer size={14} /> {printLabel}</button>
+                    <button className="btn btn-primary btn-sm" onClick={exportProfitExcel}><Download size={14} /> {exportLabel}</button>
+                  </div>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>{text.date}</th><th>{text.title}</th><th>{text.type}</th><th>{text.receiptNo}</th><th>{text.profitAmount || t('profitAmount')}</th><th>{t('currency')}</th><th>{text.description}</th></tr></thead>
+                    <tbody>
+                      {(selected.profits || []).length === 0 ? <EmptyRow colSpan={7} text={text.noRecords} /> : selected.profits.map(row => (
+                        <tr key={row.id}>
+                          <td>{shortDate(row.created_at)}</td>
+                          <td>{row.contract_title || '-'}</td>
+                          <td><span className="badge badge-green">{row.contract_kind || row.source || '-'}</span></td>
+                          <td>{row.contract_no || '-'}</td>
+                          <td style={{ fontWeight: 900, color: 'var(--success)' }}>{fmtMoney(row.amount, row.currency)}</td>
+                          <td>{row.currency || 'USD'}</td>
+                          <td>{row.notes || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
