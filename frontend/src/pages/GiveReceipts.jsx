@@ -27,12 +27,36 @@ function amountToWords(n, currency) {
   return r.trim() + ' ' + cur;
 }
 
+function formatReceiptPeriod(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  let year;
+  let monthIndex;
+  const iso = raw.match(/^(\d{4})-(\d{1,2})(?:-\d{1,2})?$/);
+  if (iso) {
+    year = Number(iso[1]);
+    monthIndex = Number(iso[2]) - 1;
+  } else {
+    const parsed = new Date(`1 ${raw}`);
+    if (!Number.isNaN(parsed.getTime())) {
+      year = parsed.getFullYear();
+      monthIndex = parsed.getMonth();
+    }
+  }
+  if (!Number.isInteger(year) || !Number.isInteger(monthIndex) || monthIndex < 0 || monthIndex > 11) return raw;
+  const start = new Date(year, monthIndex, 1);
+  const end = new Date(year, monthIndex + 1, 1);
+  const fmt = date => `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+  return `${fmt(start)} to ${fmt(end)}`;
+}
+
 function printGiveReceipt(data) {
   const rno      = data.receipt_no || ('G-' + (Date.now().toString().slice(-4)));
   const date     = new Date().toLocaleDateString('en-GB').split('/').reverse().join('-');
   const sym      = { USD:'$', IQD:'د.ع', EUR:'€' }[data.currency] || '$';
   const amtFmt   = sym + Number(data.amount).toLocaleString();
   const amtWords = amountToWords(data.amount, data.currency);
+  const period   = formatReceiptPeriod(data.month);
 
   const block = `<div style="width:100%;padding-top:1.8cm;padding-bottom:0.8cm;padding-right:2.5cm;padding-left:2.5cm;font-family:'NRT','Cairo',sans-serif;direction:rtl;background:transparent;box-sizing:border-box;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -54,7 +78,7 @@ function printGiveReceipt(data) {
         </tr>
         <tr style="background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
           <td style="padding:9px 10px;color:#555;text-align:right;vertical-align:top;">لە بڕی / وذلك عن :</td>
-          <td style="padding:9px 10px;text-align:center;line-height:1.7;"><div>${data.instead||'کرێی مولک'} ژماره (${data.apt})${data.location?' لە ('+data.location+')':''}</div><div>${data.month}</div></td>
+          <td style="padding:9px 10px;text-align:center;line-height:1.7;"><div>${data.instead||'کرێی مولک'} ژماره (${data.apt})${data.location?' لە ('+data.location+')':''}</div><div>${period}</div></td>
           <td style="padding:9px 10px;color:#555;text-align:left;direction:ltr;vertical-align:top;">For :</td>
         </tr>
         <tr style="background:transparent;">
@@ -443,7 +467,12 @@ export default function GiveReceipts({ mode = 'history' }) {
                             <button title={tx.edit} onClick={()=>editReceipt(r)} style={{background:'none',border:'none',cursor:'pointer',color:'#c8a400',fontSize:15,padding:'4px 6px'}}><Edit3 size={15} /></button>
                             <button onClick={async()=>{
                               if(!window.confirm(tx.delete+'?'))return;
-                              await api.deleteReceipt(r.id);
+                              const result = await api.deleteReceipt(r.id);
+                              if (result?.requiresApproval) {
+                                toast('Delete sent to admin approval', 'success');
+                                window.dispatchEvent(new Event('rentpro-change-requests-updated'));
+                                return;
+                              }
                               setHistory(h=>h.filter(x=>x.id!==r.id));
                               toast(tx.delete,'info');
                             }} title={tx.delete} style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:16,padding:'4px 6px'}}><Trash2 size={15} /></button>

@@ -1,0 +1,146 @@
+.review-page {
+  display: grid;
+  gap: 20px;
+}
+
+.review-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.review-tabs button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-weight: 800;
+  text-transform: capitalize;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.review-tabs button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  color: var(--text-primary);
+}
+
+.review-tabs button.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.review-card .card-header h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-list {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.review-item {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.review-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.review-item-top > div {
+  display: grid;
+  gap: 4px;
+}
+
+.review-item-top strong {
+  font-size: 16px;
+}
+
+.review-item-top span:not(.badge) {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-meta span {
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.review-diff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.review-diff.delete-summary {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.review-diff > div {
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.review-diff h3 {
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.review-diff pre {
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.7;
+  max-height: 210px;
+  overflow: auto;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 860px) {
+  .review-diff {
+    grid-template-columns: 1fr;
+  }
+}

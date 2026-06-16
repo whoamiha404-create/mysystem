@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { db } = require('../db/database');
 const auth = require('../middleware/auth');
+const { createChangeRequest, isManager } = require('./changeRequests');
 
 function paymentOwned(paymentId, userId) {
   if (!paymentId) return null;
@@ -154,11 +155,38 @@ router.put('/:id', auth, (req, res) => {
   );
 
   const row = db.prepare(`SELECT * FROM receipts WHERE id = ? AND user_id = ?`).get(req.params.id, req.user.id);
-  res.json({ ...row, wa_sent: !!row.wa_sent });
+  if (!isManager(req.user)) {
+    createChangeRequest({
+      req,
+      targetType: 'receipt',
+      targetId: existing.id,
+      action: 'edit',
+      before: existing,
+      after: row,
+      title: row.receipt_no || row.tenant_name || `Receipt #${existing.id}`,
+      status: 'approved',
+    });
+  }
+  res.json({ ...row, wa_sent: !!row.wa_sent, changeLogged: !isManager(req.user) });
 });
 
 // DELETE /api/receipts/:id
 router.delete('/:id', auth, (req, res) => {
+  const existing = db.prepare(`SELECT * FROM receipts WHERE id = ? AND user_id = ?`).get(req.params.id, req.user.id);
+  if (!existing) return res.status(404).json({ error: 'Receipt not found' });
+
+  if (!isManager(req.user)) {
+    const request = createChangeRequest({
+      req,
+      targetType: 'receipt',
+      targetId: existing.id,
+      action: 'delete',
+      before: existing,
+      title: existing.receipt_no || existing.tenant_name || `Receipt #${existing.id}`,
+    });
+    return res.status(202).json({ ok: true, requiresApproval: true, requestId: request.id });
+  }
+
   db.prepare(`DELETE FROM receipts WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
   res.json({ ok: true });
 });

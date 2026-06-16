@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { db } = require('../db/database');
 const auth = require('../middleware/auth');
+const { createChangeRequest, isManager } = require('./changeRequests');
 
 function canSeeAll(req) {
   return ['admin', 'developer'].includes(req.user.role);
@@ -159,6 +160,62 @@ router.post('/', auth, (req, res) => {
   );
 
   res.status(201).json(db.prepare(`SELECT * FROM profits WHERE id = ?`).get(result.lastInsertRowid));
+});
+
+router.put('/:id', auth, (req, res) => {
+  const existing = db.prepare(`SELECT * FROM profits WHERE id = ? AND user_id = ?`).get(req.params.id, req.user.id);
+  if (!existing && !canSeeAll(req)) return res.status(404).json({ error: 'Profit not found' });
+  const managerExisting = existing || db.prepare(`SELECT * FROM profits WHERE id = ?`).get(req.params.id);
+  if (!managerExisting) return res.status(404).json({ error: 'Profit not found' });
+
+  const amount = Number(req.body.amount || 0);
+  if (!Number.isFinite(amount) || amount < 0) return res.status(400).json({ error: 'Profit amount is invalid' });
+
+  const next = {
+    ...managerExisting,
+    amount,
+    currency: req.body.currency || managerExisting.currency || 'USD',
+    notes: req.body.notes ?? managerExisting.notes ?? '',
+  };
+
+  db.prepare(`UPDATE profits SET amount = ?, currency = ?, notes = ? WHERE id = ?`)
+    .run(next.amount, next.currency, next.notes, managerExisting.id);
+  const row = db.prepare(`SELECT * FROM profits WHERE id = ?`).get(managerExisting.id);
+  if (!isManager(req.user)) {
+    createChangeRequest({
+      req,
+      targetType: 'profit',
+      targetId: managerExisting.id,
+      action: 'edit',
+      before: managerExisting,
+      after: row,
+      title: managerExisting.contract_title || managerExisting.contract_no || `Profit #${managerExisting.id}`,
+      status: 'approved',
+    });
+  }
+  res.json({ ...row, changeLogged: !isManager(req.user) });
+});
+
+router.delete('/:id', auth, (req, res) => {
+  const existing = db.prepare(`SELECT * FROM profits WHERE id = ? AND user_id = ?`).get(req.params.id, req.user.id);
+  if (!existing && !canSeeAll(req)) return res.status(404).json({ error: 'Profit not found' });
+  const managerExisting = existing || db.prepare(`SELECT * FROM profits WHERE id = ?`).get(req.params.id);
+  if (!managerExisting) return res.status(404).json({ error: 'Profit not found' });
+
+  if (!isManager(req.user)) {
+    const request = createChangeRequest({
+      req,
+      targetType: 'profit',
+      targetId: managerExisting.id,
+      action: 'delete',
+      before: managerExisting,
+      title: managerExisting.contract_title || managerExisting.contract_no || `Profit #${managerExisting.id}`,
+    });
+    return res.status(202).json({ ok: true, requiresApproval: true, requestId: request.id });
+  }
+
+  db.prepare(`DELETE FROM profits WHERE id = ?`).run(managerExisting.id);
+  res.json({ ok: true });
 });
 
 module.exports = router;

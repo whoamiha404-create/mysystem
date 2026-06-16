@@ -680,6 +680,245 @@
   font-weight: 800;
 }
 
+.sell-paper-old {
+  max-width: none;
+  width: 210mm;
+  padding: 0;
+  background: #fff;
+  color: #596170;
+  font-family: var(--font-kurdish), var(--font-arabic), Tahoma, Arial, sans-serif;
+  font-size: 13.4px;
+  font-weight: 800;
+  line-height: 1.9;
+}
+
+.sell-old-page {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 58mm 20mm 27mm;
+  box-sizing: border-box;
+  background: #fff;
+  break-after: page;
+  page-break-after: always;
+}
+
+.sell-old-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+.sell-old-header {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(220px, auto) minmax(130px, 1fr);
+  align-items: center;
+  gap: 18px;
+  color: #d99b18;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.3;
+  margin-bottom: 28px;
+}
+
+.sell-old-header h3 {
+  margin: 0;
+  color: #d99b18;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sell-old-contract-no,
+.sell-old-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.sell-old-contract-no {
+  justify-content: flex-start;
+  direction: rtl;
+}
+
+.sell-old-date {
+  justify-content: flex-end;
+  direction: rtl;
+}
+
+.sell-old-contract-no strong,
+.sell-old-date strong {
+  color: #d99b18;
+  font: inherit;
+}
+
+.sell-old-summary {
+  margin: 0 0 18px;
+}
+
+.sell-old-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 74px;
+  margin-bottom: 12px;
+}
+
+.sell-old-summary-item {
+  display: grid;
+  grid-template-columns: max-content minmax(80px, 1fr);
+  align-items: baseline;
+  gap: 18px;
+  color: #596170;
+  line-height: 1.45;
+}
+
+.sell-old-summary-item span {
+  color: #525967;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.sell-old-summary-item strong {
+  color: #596170;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sell-old-agreement {
+  margin: 12px 0 14px;
+  color: #525967;
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.sell-old-terms {
+  color: #596170;
+}
+
+.sell-old-term {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 13px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.sell-old-term span {
+  color: #596170;
+  font-weight: 900;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sell-old-term p {
+  margin: 0;
+  color: #596170;
+  font-size: 13.2px;
+  font-weight: 800;
+  line-height: 2.05;
+  text-align: justify;
+  text-align-last: right;
+}
+
+.sell-old-note {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 48px;
+  margin-top: 18px;
+  color: #596170;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sell-old-note strong {
+  color: #525967;
+  font-weight: 900;
+}
+
+.sell-old-signatures {
+  display: grid;
+  align-items: start;
+  gap: 34px;
+  margin-top: 48px;
+  color: #596170;
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.sell-old-signatures.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 38mm;
+}
+
+.sell-old-signatures.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sell-old-signatures strong,
+.sell-old-signatures span {
+  display: block;
+  color: #596170;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.sell-old-signatures span {
+  margin-top: 22px;
+  font-weight: 800;
+}
+
+.rent-paper-old .sell-old-header {
+  margin-bottom: 22px;
+}
+
+.rent-old-summary {
+  margin-bottom: 12px;
+}
+
+.rent-old-summary-row {
+  gap: 86px;
+  margin-bottom: 10px;
+}
+
+.rent-old-summary-item {
+  gap: 14px;
+}
+
+.rent-old-agreement {
+  margin: 10px 0 10px;
+  font-size: 14.5px;
+}
+
+.rent-paper-old .sell-old-term {
+  grid-template-columns: 32px minmax(0, 1fr);
+  margin-bottom: 8px;
+}
+
+.rent-paper-old .sell-old-term p {
+  font-size: 12.7px;
+  line-height: 1.78;
+}
+
+.rent-old-page-one .rent-old-signatures {
+  margin-top: 16px;
+}
+
+.rent-old-page-two .rent-old-signatures {
+  margin-top: 38px;
+}
+
+.rent-old-note {
+  min-height: 30px;
+  margin-top: 10px;
+}
+
 .sell-signature-input {
   width: 100%;
   min-height: 24px;
@@ -1479,15 +1718,52 @@
 
 @media print {
   @page {
+    size: A4;
     margin: 0;
+  }
+
+  html,
+  body,
+  #root {
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  .app-shell,
+  .app-main,
+  .page-content,
+  .contract-page {
+    display: block !important;
+    width: auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  .mobile-topbar,
+  .mobile-sidebar-overlay,
+  .sidebar,
+  .app-sidebar,
+  .global-attention-wrap,
+  .contract-page > :not(.contract-print-mount),
+  .contract-preview-modal-backdrop {
+    display: none !important;
   }
 
   body * {
     visibility: hidden !important;
   }
 
-  .contract-print-area,
-  .contract-print-area * {
+  .contract-print-mount,
+  .contract-print-mount *,
+  .contract-print-mount .contract-print-area,
+  .contract-print-mount .contract-print-area * {
     visibility: visible !important;
   }
 
@@ -1497,23 +1773,100 @@
     visibility: hidden !important;
   }
 
-  .contract-print-area {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 5cm 1.5cm 2.5cm;
-    box-sizing: border-box;
-    background: #fff;
-    color: #000;
+  .contract-print-mount {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
   }
 
-  .contract-print-mount {
+  .contract-print-mount .contract-print-area {
+    display: block !important;
     position: static !important;
-    width: auto !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 5cm 1.5cm 2.5cm !important;
+    box-sizing: border-box !important;
     overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .contract-print-mount .sell-paper-old {
+    width: 210mm !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    color: #596170 !important;
+    font-size: 13.1px !important;
+    line-height: 1.9 !important;
+  }
+
+  .contract-print-mount .sell-paper-old .sell-old-page {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: 297mm !important;
+    padding: 58mm 20mm 27mm !important;
+    overflow: hidden !important;
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  .contract-print-mount .sell-paper-old .sell-old-page:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .contract-print-mount .sell-paper-old .sell-old-header {
+    margin-bottom: 28px !important;
+  }
+
+  .contract-print-mount .sell-paper-old .sell-old-term {
+    margin-bottom: 12px !important;
+  }
+
+  .contract-print-mount .sell-paper-old .sell-old-term p {
+    font-size: 13px !important;
+    line-height: 2.02 !important;
+  }
+
+  .contract-print-mount .rent-paper-old .sell-old-page {
+    padding: 58mm 20mm 27mm !important;
+  }
+
+  .contract-print-mount .rent-paper-old .sell-old-header {
+    margin-bottom: 22px !important;
+  }
+
+  .contract-print-mount .rent-paper-old .sell-old-term {
+    margin-bottom: 7px !important;
+  }
+
+  .contract-print-mount .rent-paper-old .sell-old-term p {
+    font-size: 12.4px !important;
+    line-height: 1.72 !important;
+  }
+
+  .contract-print-mount .rent-paper-old .rent-old-agreement {
+    margin: 9px 0 9px !important;
+  }
+
+  .contract-print-mount .rent-paper-old .rent-old-page-one .rent-old-signatures {
+    margin-top: 14px !important;
+  }
+
+  .contract-print-mount .rent-paper-old .rent-old-page-two .rent-old-signatures {
+    margin-top: 34px !important;
   }
 
   .contract-print-area textarea,
@@ -1522,6 +1875,23 @@
     background: transparent;
     color: #000;
     resize: none;
+  }
+
+  .contract-print-mount .contract-terms-table,
+  .contract-print-mount .sell-paper-terms {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  .contract-print-mount .contract-terms-table tr,
+  .contract-print-mount .sell-paper-terms tr {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  .contract-print-mount .sell-paper-signatures {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .contract-terms-table td {
@@ -1534,6 +1904,12 @@
     padding: 5cm 1.5cm 2.5cm;
     font-size: 10.5px;
     line-height: 1.5;
+  }
+
+  .sell-paper-old {
+    max-width: none !important;
+    min-height: 0 !important;
+    padding: 0 !important;
   }
 
   .sell-paper-screen-branch,

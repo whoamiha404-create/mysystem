@@ -27,6 +27,7 @@ app.use('/api/contracts', require('./routes/contracts'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/notifications', notificationsRoute);
 app.use('/api/profits', require('./routes/profits'));
+app.use('/api/change-requests', require('./routes/changeRequests').router);
 
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 

@@ -499,6 +499,12 @@ function organizerSignature(lang, text) {
   return text.organizer;
 }
 
+function contractOrganizerLabel(lang = 'ku') {
+  if (lang === 'ar') return 'منظم العقد';
+  if (lang === 'ku') return 'ڕێکخەری گرێبەست';
+  return 'Contract organizer';
+}
+
 function buildSellTerms(values, lang = 'en') {
   const price = moneyWithWords(values.price, values.currency, lang);
   const advance = moneyWithWords(values.moneyAdvance, values.currency, lang, '0');
@@ -821,48 +827,8 @@ function defaultTerms(kind, values, lang = 'en') {
   return kind === 'sell' ? buildSellTerms(values, lang) : buildRentTermsExact(values, lang);
 }
 
-function storeKey(kind) {
-  return `rp_${kind}_contracts`;
-}
-
 function draftKey(kind) {
   return `rp_${kind}_contract_draft`;
-}
-
-function readJson(key, fallback) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function loadContracts(kind) {
-  const rawSaved = localStorage.getItem(storeKey(kind));
-  if (rawSaved) {
-    try {
-      const saved = JSON.parse(rawSaved);
-      if (Array.isArray(saved)) return saved.filter(contract => !contract.kind || contract.kind === kind);
-    } catch {
-      return [];
-    }
-  }
-
-  const legacyDraft = readJson(draftKey(kind), null);
-  if (!legacyDraft) return [];
-
-  const now = new Date().toISOString();
-  return [{
-    id: `legacy-${kind}`,
-    kind,
-    values: legacyDraft,
-    createdAt: now,
-    updatedAt: now,
-  }];
-}
-
-function writeContracts(kind, contracts) {
-  localStorage.setItem(storeKey(kind), JSON.stringify(contracts));
 }
 
 function normalizeContract(contract, kind) {
@@ -872,6 +838,34 @@ function normalizeContract(contract, kind) {
     kind: contract.kind || kind,
     values: contract.values || {},
   };
+}
+
+function profitPromptedKey(kind, contractId) {
+  return `rentpro-profit-prompted-${kind || 'contract'}-${contractId}`;
+}
+
+async function prepareProfitPrompt(contractId, kind) {
+  if (!contractId) return false;
+  try {
+    const pending = await api.getPendingProfitContracts();
+    const stillNeedsProfit = (pending || []).some(contract =>
+      String(contract.id) === String(contractId) && (!kind || contract.kind === kind)
+    );
+    if (!stillNeedsProfit) {
+      localStorage.removeItem('rentpro-profit-contract');
+      localStorage.removeItem(profitPromptedKey(kind, contractId));
+      return false;
+    }
+  } catch {
+    // If the check fails, keep the old safe behavior so a new contract is not missed.
+  }
+  if (localStorage.getItem(profitPromptedKey(kind, contractId))) {
+    localStorage.removeItem('rentpro-profit-contract');
+    return false;
+  }
+  localStorage.setItem(profitPromptedKey(kind, contractId), '1');
+  localStorage.setItem('rentpro-profit-contract', JSON.stringify({ id: contractId, kind }));
+  return true;
 }
 
 function initialValues(fields, text, kind, lang = 'en') {
@@ -1014,6 +1008,206 @@ function PaperField({ label, value, editable, onChange, type = 'text', className
   );
 }
 
+function SellOldHeader({ text, values, title = sellPaperTitle('ku') }) {
+  return (
+    <div className="sell-old-header">
+      <div className="sell-old-contract-no">
+        <span>{text.contractNo}</span>
+        <strong># {values.contractNo || '-'}</strong>
+      </div>
+      <h3>{title}</h3>
+      <div className="sell-old-date">
+        <span>{text.dateLabel}</span>
+        <strong>{values.contractDate || '-'}</strong>
+      </div>
+    </div>
+  );
+}
+
+function SellOldSummary({ text, values }) {
+  const rows = [
+    [
+      { label: text.firstSellerSignature, value: values.firstParty },
+      { label: text.secondBuyerSignature, value: values.secondParty },
+    ],
+    [
+      { label: text.location, value: values.location },
+      { label: text.propertyType, value: values.propertyType },
+    ],
+    [
+      { label: text.propertyNumber, value: values.propertyNumber },
+      { label: text.area, value: values.area ? areaWithUnit(values.area) : '' },
+    ],
+  ];
+
+  return (
+    <div className="sell-old-summary">
+      {rows.map((row, rowIndex) => (
+        <div className="sell-old-summary-row" key={rowIndex}>
+          {row.map(item => (
+            <div className="sell-old-summary-item" key={item.label}>
+              <span>{item.label}:</span>
+              <strong>{item.value || '-'}</strong>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SellOldTerms({ terms, startIndex = 0 }) {
+  return (
+    <div className="sell-old-terms">
+      {terms.map((term, index) => (
+        <div className="sell-old-term" key={`${startIndex}-${index}`}>
+          <span>{startIndex + index + 1}-</span>
+          <p>{term}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SellOldSignatures({ text, values, coordinatorName, withOrganizer = false }) {
+  return (
+    <div className={`sell-old-signatures ${withOrganizer ? 'three' : 'two'}`}>
+      <div>
+        <strong>{text.secondBuyerSignature}</strong>
+        <span>{values.secondParty || '-'}</span>
+      </div>
+      {withOrganizer && (
+        <div>
+          <strong>{contractOrganizerLabel('ku')}</strong>
+          <span>{coordinatorName || '-'}</span>
+        </div>
+      )}
+      <div>
+        <strong>{text.firstSellerSignature}</strong>
+        <span>{values.firstParty || '-'}</span>
+      </div>
+    </div>
+  );
+}
+
+function SellOldPrintContract({ text, values, settings = {} }) {
+  const paperText = getText('ku');
+  const terms = values.mainTerms?.length && values.mainTermsLang === 'ku' && values.mainTermsVersion === TERMS_VERSION
+    ? values.mainTerms
+    : defaultTerms('sell', values, 'ku');
+  const coordinatorName = settings.contractCoordinator || values.organizerName || '';
+  const firstPageTerms = terms.slice(0, 8);
+  const secondPageTerms = terms.slice(8);
+
+  return (
+    <div className="contract-main-form contract-print-area sell-paper sell-paper-old" dir="rtl">
+      <section className="sell-old-page sell-old-page-one">
+        <SellOldHeader text={paperText} values={values} />
+        <SellOldSummary text={paperText} values={values} />
+        <p className="sell-old-agreement">{sellAgreementHeading('ku', paperText)}</p>
+        <SellOldTerms terms={firstPageTerms} />
+        <SellOldSignatures text={paperText} values={values} coordinatorName={coordinatorName} />
+      </section>
+
+      <section className="sell-old-page sell-old-page-two">
+        <SellOldHeader text={paperText} values={values} />
+        <SellOldTerms terms={secondPageTerms} startIndex={8} />
+        <div className="sell-old-note">
+          <strong>{paperText.note} :</strong>
+          <span>{values.note || ''}</span>
+        </div>
+        <SellOldSignatures text={paperText} values={values} coordinatorName={coordinatorName} withOrganizer />
+      </section>
+    </div>
+  );
+}
+
+function RentOldSummary({ text, values }) {
+  const propertyLine = [values.propertyType, values.building, values.floor].filter(Boolean).join('   ');
+  const rows = [
+    [
+      { label: text.ownerParty, value: values.ownerParty },
+      { label: text.tenantParty, value: values.tenantParty },
+    ],
+    [
+      { label: text.propertyType, value: propertyLine || values.propertyType },
+      { label: text.location, value: values.location },
+    ],
+    [
+      { label: text.area, value: values.area },
+      { label: text.propertyNumber, value: values.propertyNumber },
+    ],
+  ];
+
+  return (
+    <div className="sell-old-summary rent-old-summary">
+      {rows.map((row, rowIndex) => (
+        <div className="sell-old-summary-row rent-old-summary-row" key={rowIndex}>
+          {row.map(item => (
+            <div className="sell-old-summary-item rent-old-summary-item" key={item.label}>
+              <span>{item.label}:</span>
+              <strong>{item.value || '-'}</strong>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RentOldSignatures({ text, values, coordinatorName, withOrganizer = false, names = true }) {
+  return (
+    <div className={`sell-old-signatures rent-old-signatures ${withOrganizer ? 'three' : 'two'}`}>
+      <div>
+        <strong>{text.tenantSignature}</strong>
+        {names && <span>{values.tenantParty || '-'}</span>}
+      </div>
+      {withOrganizer && (
+        <div>
+          <strong>{contractOrganizerLabel('ku')}</strong>
+          <span>{coordinatorName || '-'}</span>
+        </div>
+      )}
+      <div>
+        <strong>{text.ownerSignature}</strong>
+        {names && <span>{values.ownerParty || '-'}</span>}
+      </div>
+    </div>
+  );
+}
+
+function RentOldPrintContract({ text, values, settings = {} }) {
+  const paperText = getText('ku');
+  const terms = values.mainTerms?.length >= 24 && values.mainTermsLang === 'ku' && values.mainTermsVersion === TERMS_VERSION
+    ? values.mainTerms
+    : defaultTerms('rent', values, 'ku');
+  const coordinatorName = settings.contractCoordinator || values.organizerName || '';
+  const firstPageTerms = terms.slice(0, 12);
+  const secondPageTerms = terms.slice(12, 24);
+
+  return (
+    <div className="contract-main-form contract-print-area sell-paper sell-paper-old rent-paper-old" dir="rtl">
+      <section className="sell-old-page rent-old-page rent-old-page-one">
+        <SellOldHeader text={paperText} values={values} title={rentPaperTitle('ku')} />
+        <RentOldSummary text={paperText} values={values} />
+        <p className="sell-old-agreement rent-old-agreement">{sellAgreementHeading('ku', paperText)}</p>
+        <SellOldTerms terms={firstPageTerms} />
+        <RentOldSignatures text={paperText} values={values} coordinatorName={coordinatorName} names={false} />
+      </section>
+
+      <section className="sell-old-page rent-old-page rent-old-page-two">
+        <SellOldHeader text={paperText} values={values} title={rentPaperTitle('ku')} />
+        <SellOldTerms terms={secondPageTerms} startIndex={12} />
+        <div className="sell-old-note rent-old-note">
+          <strong>{paperText.note} :</strong>
+          <span>{values.note || ''}</span>
+        </div>
+        <RentOldSignatures text={paperText} values={values} coordinatorName={coordinatorName} withOrganizer />
+      </section>
+    </div>
+  );
+}
+
 function SellMainContract({ lang, text, values, settings = {}, editable = false, onFieldChange, onTermChange }) {
   const terms = values.mainTerms?.length && values.mainTermsLang === lang && values.mainTermsVersion === TERMS_VERSION
     ? values.mainTerms
@@ -1035,6 +1229,10 @@ function SellMainContract({ lang, text, values, settings = {}, editable = false,
     ['unitLayout', text.unitLayout, 'print-hidden'],
     ['currency', text.currency, 'print-hidden'],
   ];
+
+  if (!editable) {
+    return <SellOldPrintContract text={text} values={values} settings={settings} />;
+  }
 
   return (
     <div className="contract-main-form contract-print-area sell-paper">
@@ -1146,6 +1344,10 @@ function RentMainContract({ lang, text, values, settings = {}, editable = false,
     ['contractType', text.contractType, 'print-hidden'],
     ['assurances', text.assurances, 'print-hidden'],
   ];
+
+  if (!editable) {
+    return <RentOldPrintContract text={text} values={values} settings={settings} />;
+  }
 
   return (
     <div className="contract-main-form contract-print-area sell-paper rent-paper">
@@ -1296,23 +1498,14 @@ function ContractLibrary({ kind, lang, text, title, isRtl }) {
     async function loadSaved() {
       setLoading(true);
       try {
-        let rows = (await api.getContracts(kind)).map(contract => normalizeContract(contract, kind));
-        const localRows = loadContracts(kind).map(contract => normalizeContract(contract, kind));
-        if (rows.length === 0 && localRows.length > 0) {
-          const migrated = await Promise.all(
-            localRows.map(contract => api.createContract({ kind, values: contract.values }))
-          );
-          rows = migrated.map(contract => normalizeContract(contract, kind));
-          localStorage.removeItem(storeKey(kind));
-        }
+        const rows = (await api.getContracts(kind)).map(contract => normalizeContract(contract, kind));
         if (!alive) return;
         setContracts(rows);
         setSelectedId(rows[0]?.id || '');
       } catch (error) {
-        const localRows = loadContracts(kind).map(contract => normalizeContract(contract, kind));
         if (!alive) return;
-        setContracts(localRows);
-        setSelectedId(localRows[0]?.id || '');
+        setContracts([]);
+        setSelectedId('');
         toast(error.message || 'Could not load saved contracts', 'error');
       } finally {
         if (alive) setLoading(false);
@@ -1325,23 +1518,27 @@ function ContractLibrary({ kind, lang, text, title, isRtl }) {
   async function removeContract(id) {
     if (!window.confirm(text.confirmDelete)) return;
     try {
-      await api.deleteContract(id);
+      const result = await api.deleteContract(id);
+      if (result?.requiresApproval) {
+        toast('Delete sent to admin approval', 'success');
+        window.dispatchEvent(new Event('rentpro-change-requests-updated'));
+        window.dispatchEvent(new Event('rentpro-profit-updated'));
+        return;
+      }
       const next = contracts.filter(contract => contract.id !== id);
       setContracts(next);
       setSelectedId(next[0]?.id || '');
       if (String(previewId) === String(id)) setPreviewId('');
+      window.dispatchEvent(new Event('rentpro-profit-updated'));
       toast(text.deleted, 'success');
     } catch (error) {
       toast(error.message || 'Delete failed', 'error');
     }
   }
 
-  function doPrintContract(contract) {
+  async function doPrintContract(contract) {
     setSelectedId(contract.id);
-    localStorage.setItem('rentpro-profit-contract', JSON.stringify({ id: contract.id, kind }));
-    const afterPrint = () => navigate('/profit');
-    window.addEventListener('afterprint', afterPrint, { once: true });
-    setTimeout(() => window.print(), 0);
+    setTimeout(() => window.print(), 80);
   }
 
   function printContract(contract) {
@@ -1481,8 +1678,7 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
   const [savedContract, setSavedContract] = useState(null);
   const [activeTab, setActiveTab] = useState('secondary');
   const [values, setValues] = useState(() => {
-    const localContract = contractId ? loadContracts(kind).find(contract => String(contract.id) === String(contractId)) : null;
-    const initial = localContract?.values || initialValues(fields, text, kind, lang);
+    const initial = initialValues(fields, text, kind, lang);
     if (!initial.mainTermsTouched && (initial.mainTermsLang !== lang || initial.mainTermsVersion !== TERMS_VERSION)) {
       return { ...initial, mainTerms: defaultTerms(kind, initial, lang), mainTermsLang: lang, mainTermsVersion: TERMS_VERSION };
     }
@@ -1510,13 +1706,7 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
         setValues(nextValues);
       })
       .catch(error => {
-        const localContract = loadContracts(kind).find(contract => String(contract.id) === String(contractId));
-        if (localContract) {
-          setSavedContract(normalizeContract(localContract, kind));
-          setValues(localContract.values);
-        } else {
-          toast(error.message || 'Could not load contract', 'error');
-        }
+        toast(error.message || 'Could not load contract', 'error');
       });
 
     return () => { alive = false; };
@@ -1551,6 +1741,7 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
   const printCurrent = async () => {
     setActiveTab('main');
     let contractForProfit = savedContract;
+    const wasNewContract = !savedContract?.id;
     const nextValues = {
       ...values,
       mainTerms: values.mainTerms?.length && values.mainTermsLang === lang && values.mainTermsVersion === TERMS_VERSION ? values.mainTerms : defaultTerms(kind, values, lang),
@@ -1566,16 +1757,19 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
       contractForProfit = normalizeContract(saved, kind);
       setSavedContract(contractForProfit);
       localStorage.setItem(draftKey(kind), JSON.stringify(contractForProfit.values));
+      window.dispatchEvent(new Event('rentpro-profit-updated'));
     } catch (error) {
       toast(error.message || text.saved, 'error');
     }
 
-    if (contractForProfit?.id) {
-      localStorage.setItem('rentpro-profit-contract', JSON.stringify({ id: contractForProfit.id, kind }));
-    }
-    const afterPrint = () => navigate('/profit');
+    const shouldOpenProfit = wasNewContract && contractForProfit?.id
+      ? await prepareProfitPrompt(contractForProfit.id, kind)
+      : false;
+    const afterPrint = () => {
+      if (shouldOpenProfit) navigate('/profit');
+    };
     window.addEventListener('afterprint', afterPrint, { once: true });
-    setTimeout(() => window.print(), 0);
+    setTimeout(() => window.print(), 80);
   };
   const save = async () => {
     const now = new Date().toISOString();
@@ -1601,22 +1795,11 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
       const normalized = normalizeContract(saved, kind);
       setSavedContract(normalized);
       localStorage.setItem(draftKey(kind), JSON.stringify(normalized.values));
+      window.dispatchEvent(new Event('rentpro-profit-updated'));
       toast(existingId ? text.updated : text.saved, 'success');
       navigate(`/contracts/${kind}/${normalized.id}`, { replace: true });
     } catch (error) {
-      const contracts = loadContracts(kind);
-      const fallbackContract = {
-        ...nextContract,
-        id: existingId || `${kind}-${Date.now()}`,
-      };
-      const nextContracts = existingId
-        ? contracts.map(contract => String(contract.id) === String(existingId) ? fallbackContract : contract)
-        : [fallbackContract, ...contracts.filter(contract => String(contract.id) !== String(fallbackContract.id))];
-      writeContracts(kind, nextContracts);
-      localStorage.setItem(draftKey(kind), JSON.stringify(fallbackContract.values));
-      setSavedContract(fallbackContract);
       toast(error.message || text.saved, 'error');
-      navigate(`/contracts/${kind}/${fallbackContract.id}`, { replace: true });
     }
   };
 
@@ -1681,6 +1864,22 @@ function ContractForm({ kind, lang, text, title, isRtl }) {
           </div>
         </div>
       </section>
+
+      <div className="contract-print-mount" aria-hidden="true">
+        <MainContract
+          kind={kind}
+          lang={lang}
+          text={text}
+          values={{
+            ...values,
+            mainTerms: values.mainTerms?.length && values.mainTermsLang === lang && values.mainTermsVersion === TERMS_VERSION ? values.mainTerms : defaultTerms(kind, values, lang),
+            mainTermsLang: lang,
+            mainTermsVersion: TERMS_VERSION,
+            mainTermsTouched: !!values.mainTermsTouched,
+          }}
+          settings={settings}
+        />
+      </div>
     </div>
   );
 }

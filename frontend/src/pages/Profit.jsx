@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Loader2, TrendingDown, TrendingUp, WalletMinimal } from 'lucide-react';
+import { AlertCircle, Edit3, Loader2, Trash2, TrendingDown, TrendingUp, WalletMinimal } from 'lucide-react';
 import api from '../api/client';
 import Modal from '../components/Modal';
 import { useToast } from '../context/ToastContext';
@@ -28,6 +28,8 @@ export default function Profit() {
   const [pendingContracts, setPendingContracts] = useState([]);
   const [profitTarget, setProfitTarget] = useState(null);
   const [profitForm, setProfitForm] = useState({ amount: '', currency: 'USD', notes: '' });
+  const [editingProfit, setEditingProfit] = useState(null);
+  const [editForm, setEditForm] = useState({ amount: '', currency: 'USD', notes: '' });
   const isRtl = lang === 'ar' || lang === 'ku';
 
   async function load(nextFilters = filters) {
@@ -113,6 +115,42 @@ export default function Profit() {
       setProfitForm({ amount: '', currency: 'USD', notes: '' });
       await load();
       window.dispatchEvent(new Event('rentpro-profit-updated'));
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+  }
+
+  function openEditProfit(row) {
+    setEditingProfit(row);
+    setEditForm({
+      amount: row.amount || '',
+      currency: row.currency || 'USD',
+      notes: row.notes || '',
+    });
+  }
+
+  async function saveEditProfit() {
+    if (!editingProfit) return;
+    try {
+      const result = await api.updateProfit(editingProfit.id, editForm);
+      toast(result?.requiresApproval ? 'Edit sent to admin approval' : t('save'), 'success');
+      setEditingProfit(null);
+      await load();
+      window.dispatchEvent(new Event('rentpro-profit-updated'));
+      window.dispatchEvent(new Event('rentpro-change-requests-updated'));
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+  }
+
+  async function deleteProfit(row) {
+    if (!window.confirm(`${t('delete')}?`)) return;
+    try {
+      const result = await api.deleteProfit(row.id);
+      toast(result?.requiresApproval ? 'Delete sent to admin approval' : t('delete'), 'success');
+      await load();
+      window.dispatchEvent(new Event('rentpro-profit-updated'));
+      window.dispatchEvent(new Event('rentpro-change-requests-updated'));
     } catch (error) {
       toast(error.message, 'error');
     }
@@ -205,10 +243,10 @@ export default function Profit() {
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t('date')}</th><th>{t('agent')}</th><th>{t('contract')}</th><th>{t('type')}</th><th>{t('amount')}</th><th>{t('notes')}</th></tr></thead>
+            <thead><tr><th>{t('date')}</th><th>{t('agent')}</th><th>{t('contract')}</th><th>{t('type')}</th><th>{t('amount')}</th><th>{t('notes')}</th><th>{t('actions') || 'Actions'}</th></tr></thead>
             <tbody>
               {data.profits.length === 0 ? (
-                <tr><td colSpan="6" className="td-sub">{t('noProfits')}</td></tr>
+                <tr><td colSpan="7" className="td-sub">{t('noProfits')}</td></tr>
               ) : data.profits.map(row => (
                 <tr key={row.id}>
                   <td>{String(row.created_at || '').slice(0, 16)}</td>
@@ -217,6 +255,16 @@ export default function Profit() {
                   <td>{row.contract_kind || row.source || '-'}</td>
                   <td className="profit-money">{money(row.amount, row.currency)}</td>
                   <td>{row.notes || '-'}</td>
+                  <td>
+                    <div className="profit-actions">
+                      <button type="button" className="icon-btn" onClick={() => openEditProfit(row)} title={t('edit')}>
+                        <Edit3 size={15} />
+                      </button>
+                      <button type="button" className="icon-btn danger" onClick={() => deleteProfit(row)} title={t('delete')}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -256,6 +304,42 @@ export default function Profit() {
             <div className="form-group span-2">
               <label>{t('notes')}</label>
               <textarea rows={3} value={profitForm.notes} onChange={event => setProfitForm({ ...profitForm, notes: event.target.value })} />
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {editingProfit && (
+        <Modal
+          title="Edit Profit"
+          onClose={() => setEditingProfit(null)}
+          size="sm"
+          footer={(
+            <>
+              <button className="btn btn-secondary" onClick={() => setEditingProfit(null)}>{t('cancel')}</button>
+              <button className="btn btn-primary" onClick={saveEditProfit}>{t('save')}</button>
+            </>
+          )}
+        >
+          <div className="profit-target-summary">
+            <strong>{editingProfit.contract_title || editingProfit.contract_no || t('profit')}</strong>
+            <span>{editingProfit.contract_kind || editingProfit.source || '-'}</span>
+          </div>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="form-group">
+              <label>{t('profitAmount')}</label>
+              <input type="number" min="0" value={editForm.amount} onChange={event => setEditForm({ ...editForm, amount: event.target.value })} autoFocus />
+            </div>
+            <div className="form-group">
+              <label>{t('profitCurrency')}</label>
+              <select value={editForm.currency} onChange={event => setEditForm({ ...editForm, currency: event.target.value })}>
+                <option value="USD">dolar</option>
+                <option value="IQD">dinar iraqi</option>
+              </select>
+            </div>
+            <div className="form-group span-2">
+              <label>{t('notes')}</label>
+              <textarea rows={3} value={editForm.notes} onChange={event => setEditForm({ ...editForm, notes: event.target.value })} />
             </div>
           </div>
         </Modal>

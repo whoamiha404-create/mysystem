@@ -152,6 +152,22 @@ db.exec(`
     notes         TEXT DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS change_requests (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    requester_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    owner_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    target_type   TEXT NOT NULL,
+    target_id     INTEGER NOT NULL,
+    action        TEXT NOT NULL CHECK (action IN ('edit', 'delete')),
+    status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    title         TEXT DEFAULT '',
+    before_json   TEXT DEFAULT '',
+    after_json    TEXT DEFAULT '',
+    reviewed_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at   TEXT DEFAULT '',
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 function ensureColumn(table, column, definition) {
@@ -168,6 +184,7 @@ ensureColumn('receipts', 'user_id', 'INTEGER');
 ensureColumn('contracts', 'user_id', 'INTEGER');
 ensureColumn('logs', 'user_id', 'INTEGER');
 ensureColumn('users', 'created_by', 'INTEGER');
+ensureColumn('change_requests', 'owner_id', 'INTEGER');
 
 // ── Seed default settings ────────────────────────────────────────────
 function setSetting(key, value) {

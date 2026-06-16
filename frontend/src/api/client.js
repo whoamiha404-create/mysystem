@@ -105,6 +105,14 @@ const api = {
     return request('GET', `/profits/pending-contracts${qs.toString() ? `?${qs}` : ''}`);
   },
   createProfit: (data)         => request('POST', '/profits', data),
+  updateProfit: (id, data)     => request('PUT', `/profits/${id}`, data),
+  deleteProfit: (id)           => request('DELETE', `/profits/${id}`),
+
+  // Change review center
+  getChangeRequests: (status='pending') => request('GET', `/change-requests?status=${encodeURIComponent(status)}`),
+  getChangeRequestCount: ()    => request('GET', '/change-requests/pending-count'),
+  approveChangeRequest: (id)   => request('POST', `/change-requests/${id}/approve`),
+  rejectChangeRequest: (id)    => request('POST', `/change-requests/${id}/reject`),
 
   // Logs
   getLogs:       (limit, all=false) => {

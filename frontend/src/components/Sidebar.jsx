@@ -17,6 +17,7 @@ import {
   ReceiptText,
   Settings,
   ClipboardCheck,
+  ShieldCheck,
   UserRound,
   UsersRound,
   WalletMinimal,
@@ -45,6 +46,8 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
   const anketsActive = location.pathname.startsWith('/ankets');
   const [settings, setSettings] = useState({});
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [pendingProfits, setPendingProfits] = useState(0);
+  const [pendingChanges, setPendingChanges] = useState(0);
   const isDeveloper = user?.role === 'developer';
   const isAdmin = user?.role === 'admin';
   const canManageCompany = isDeveloper || isAdmin;
@@ -73,12 +76,48 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
         .catch(() => {});
     };
     loadUnread();
-    const interval = setInterval(loadUnread, 30000);
+    const interval = setInterval(loadUnread, 5000);
     window.addEventListener('rentpro-notifications-updated', loadUnread);
     return () => {
       alive = false;
       clearInterval(interval);
       window.removeEventListener('rentpro-notifications-updated', loadUnread);
+    };
+  }, [isDeveloper]);
+
+  useEffect(() => {
+    if (!canManageCompany) return undefined;
+    let alive = true;
+    const loadPendingChanges = () => {
+      api.getChangeRequestCount()
+        .then(data => { if (alive) setPendingChanges(Number(data.count || 0)); })
+        .catch(() => {});
+    };
+    loadPendingChanges();
+    const interval = setInterval(loadPendingChanges, 5000);
+    window.addEventListener('rentpro-change-requests-updated', loadPendingChanges);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+      window.removeEventListener('rentpro-change-requests-updated', loadPendingChanges);
+    };
+  }, [canManageCompany]);
+
+  useEffect(() => {
+    if (isDeveloper) return undefined;
+    let alive = true;
+    const loadPendingProfits = () => {
+      api.getPendingProfitContracts()
+        .then(rows => { if (alive) setPendingProfits(Array.isArray(rows) ? rows.length : 0); })
+        .catch(() => {});
+    };
+    loadPendingProfits();
+    const interval = setInterval(loadPendingProfits, 5000);
+    window.addEventListener('rentpro-profit-updated', loadPendingProfits);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+      window.removeEventListener('rentpro-profit-updated', loadPendingProfits);
     };
   }, [isDeveloper]);
 
@@ -112,7 +151,7 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
   ];
   const afterDropdownNav = [
     { to:'/notifications', icon:Bell, key:'notifications', badge: unreadNotifications },
-    { to:'/profit', icon:WalletMinimal, key:'profit' },
+    { to:'/profit', icon:WalletMinimal, key:'profit', badge: pendingProfits },
     { to:'/expenses', icon:Package, key:'expenses' },
     { to:'/reports', icon:BarChart3, key:'reports' },
     { to:'/whatsapp', icon:MessageCircle, key:'whatsapp' },
@@ -144,6 +183,7 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
     ? [{ to:'/users', icon:UsersRound, key:'users' }]
     : [
         { to:'/users', icon:UsersRound, key:'users' },
+        { to:'/change-review-center', icon:ShieldCheck, label:'Change Review Center', badge: pendingChanges },
         { to:'/agent-reports', icon:ClipboardCheck, key:'agentReports' },
       ];
   const languages = [
@@ -270,7 +310,8 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
                 className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
                 onClick={onNavigate}>
                 <span className="sidebar-icon"><item.icon size={ICON_SIZE} strokeWidth={2.25} /></span>
-                <span className="sidebar-label">{t(item.key)}</span>
+                <span className="sidebar-label">{item.label || t(item.key)}</span>
+                {!!item.badge && <span className="sidebar-badge">{item.badge}</span>}
               </NavLink>
             ))}
           </>

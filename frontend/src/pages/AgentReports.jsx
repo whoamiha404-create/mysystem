@@ -116,6 +116,102 @@ function shortDate(value) {
   return String(value).replace('T', ' ').slice(0, 16);
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function totalsByCurrency(rows = []) {
+  return rows.reduce((acc, row) => {
+    const currency = row.currency || 'USD';
+    acc[currency] = (acc[currency] || 0) + Number(row.amount || 0);
+    return acc;
+  }, {});
+}
+
+function mergeCurrencies(...totals) {
+  const currencies = new Set(['USD', 'IQD']);
+  totals.forEach(total => Object.keys(total || {}).forEach(currency => currencies.add(currency)));
+  return Array.from(currencies);
+}
+
+function totalText(totals, currencies = mergeCurrencies(totals)) {
+  return currencies.map(currency => fmtMoney(totals?.[currency] || 0, currency)).join(' / ');
+}
+
+function amountForCurrency(row, currency) {
+  return (row.currency || 'USD') === currency ? Number(row.amount || 0) : '';
+}
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildProfitReportCsv({ selected, text, t, profitLabel }) {
+  const profitRows = selected?.profits || [];
+  const expenseRows = selected?.expenses || [];
+  const receiveReceiptRows = (selected?.receipts || []).filter(row => !String(row.receipt_no || '').startsWith('G-'));
+  const giveReceiptRows = (selected?.receipts || []).filter(row => String(row.receipt_no || '').startsWith('G-'));
+  const profitTotals = totalsByCurrency(profitRows);
+  const expenseTotals = totalsByCurrency(expenseRows.map(row => ({ ...row, currency: row.currency || 'USD' })));
+  const receiveTotals = totalsByCurrency(receiveReceiptRows);
+  const giveTotals = totalsByCurrency(giveReceiptRows);
+  const currencies = mergeCurrencies(profitTotals, expenseTotals, receiveTotals, giveTotals);
+  const netTotals = currencies.reduce((acc, currency) => {
+    acc[currency] = (profitTotals[currency] || 0) - (expenseTotals[currency] || 0);
+    return acc;
+  }, {});
+  const role = selected?.role === 'developer' ? 'Developer' : selected?.role === 'admin' ? 'Owner' : 'Agent';
+  const summaryRows = [
+    ['Receive receipts', receiveReceiptRows.length, ...currencies.map(currency => receiveTotals[currency] || 0)],
+    ['Give receipts', giveReceiptRows.length, ...currencies.map(currency => giveTotals[currency] || 0)],
+    [profitLabel, profitRows.length, ...currencies.map(currency => profitTotals[currency] || 0)],
+    [text.expenses || 'Expenses / Loss', expenseRows.length, ...currencies.map(currency => expenseTotals[currency] || 0)],
+    ['Net profit / loss', '', ...currencies.map(currency => netTotals[currency] || 0)],
+  ];
+
+  const lines = [
+    [profitLabel],
+    ['Agent', selected?.name || '-', 'Username', selected?.username || '-', 'Role', role],
+    ['Generated', new Date().toLocaleString()],
+    [],
+    ['SUMMARY'],
+    ['Type', 'Count', ...currencies],
+    ...summaryRows,
+    [],
+    [profitLabel.toUpperCase()],
+    ['#', text.date, text.title, text.type, text.receiptNo, ...currencies, t('currency'), text.description],
+    ...(profitRows.length ? profitRows.map((row, index) => [
+      index + 1,
+      shortDate(row.created_at),
+      row.contract_title || '-',
+      row.contract_kind || row.source || '-',
+      row.contract_no || '-',
+      ...currencies.map(currency => amountForCurrency(row, currency)),
+      row.currency || 'USD',
+      row.notes || '-',
+    ]) : [[text.noRecords]]),
+    [],
+    [(text.expenses || 'Expenses').toUpperCase()],
+    ['#', text.date, text.description, text.category, 'Property', ...currencies, t('currency')],
+    ...(expenseRows.length ? expenseRows.map((row, index) => [
+      index + 1,
+      shortDate(row.date || row.created_at),
+      row.description || '-',
+      row.category || '-',
+      row.property || '-',
+      ...currencies.map(currency => amountForCurrency({ ...row, currency: row.currency || 'USD' }, currency)),
+      row.currency || 'USD',
+    ]) : [[text.noRecords]]),
+  ];
+
+  return `\ufeff${lines.map(row => row.map(csvCell).join(',')).join('\r\n')}`;
+}
+
 function EmptyRow({ colSpan, text }) {
   return (
     <tr>
@@ -124,6 +220,322 @@ function EmptyRow({ colSpan, text }) {
       </td>
     </tr>
   );
+}
+
+function buildProfitReportHtml({ selected, text, t, profitLabel, forExcel = false }) {
+  const profitRows = selected?.profits || [];
+  const expenseRows = selected?.expenses || [];
+  const receiveReceiptRows = (selected?.receipts || []).filter(row => !String(row.receipt_no || '').startsWith('G-'));
+  const giveReceiptRows = (selected?.receipts || []).filter(row => String(row.receipt_no || '').startsWith('G-'));
+  const profitTotals = totalsByCurrency(profitRows);
+  const expenseTotals = totalsByCurrency(expenseRows.map(row => ({ ...row, currency: row.currency || 'USD' })));
+  const receiveTotals = totalsByCurrency(receiveReceiptRows);
+  const giveTotals = totalsByCurrency(giveReceiptRows);
+  const currencies = mergeCurrencies(profitTotals, expenseTotals, receiveTotals, giveTotals);
+  const netTotals = currencies.reduce((acc, currency) => {
+    acc[currency] = (profitTotals[currency] || 0) - (expenseTotals[currency] || 0);
+    return acc;
+  }, {});
+  const generatedAt = new Date().toLocaleString();
+  const role = selected?.role === 'developer' ? 'Developer' : selected?.role === 'admin' ? 'Owner' : 'Agent';
+  const title = `${profitLabel} - ${selected?.username || selected?.id || ''}`;
+  const dir = selected?.name && /[\u0600-\u06ff]/.test(selected.name) ? 'rtl' : 'ltr';
+  const summaryRows = [
+    ['Received receipts', receiveReceiptRows.length, totalText(receiveTotals, currencies)],
+    ['Give receipts', giveReceiptRows.length, totalText(giveTotals, currencies)],
+    [profitLabel, profitRows.length, totalText(profitTotals, currencies)],
+    [text.expenses || 'Expenses', expenseRows.length, totalText(expenseTotals, currencies)],
+    ['Net profit / loss', '', totalText(netTotals, currencies)],
+  ];
+  const profitTableRows = profitRows.length
+    ? profitRows.map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(shortDate(row.created_at))}</td>
+          <td>${escapeHtml(row.contract_title || '-')}</td>
+          <td>${escapeHtml(row.contract_kind || row.source || '-')}</td>
+          <td>${escapeHtml(row.contract_no || '-')}</td>
+          <td class="money">${escapeHtml(fmtMoney(row.amount, row.currency))}</td>
+          <td>${escapeHtml(row.currency || 'USD')}</td>
+          <td>${escapeHtml(row.notes || '-')}</td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="8" class="empty">${escapeHtml(text.noRecords)}</td></tr>`;
+  const expenseTableRows = expenseRows.length
+    ? expenseRows.map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(shortDate(row.date || row.created_at))}</td>
+          <td>${escapeHtml(row.description || '-')}</td>
+          <td>${escapeHtml(row.category || '-')}</td>
+          <td class="loss">${escapeHtml(fmtMoney(row.amount, row.currency || 'USD'))}</td>
+          <td>${escapeHtml(row.currency || 'USD')}</td>
+          <td>${escapeHtml(row.property || '-')}</td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="7" class="empty">${escapeHtml(text.noRecords)}</td></tr>`;
+
+  if (forExcel) {
+    const excelCols = 8 + currencies.length;
+    const summary = [
+      ['Receive receipts', receiveReceiptRows.length, ...currencies.map(currency => receiveTotals[currency] || 0)],
+      ['Give receipts', giveReceiptRows.length, ...currencies.map(currency => giveTotals[currency] || 0)],
+      [profitLabel, profitRows.length, ...currencies.map(currency => profitTotals[currency] || 0)],
+      [text.expenses || 'Expenses / Loss', expenseRows.length, ...currencies.map(currency => expenseTotals[currency] || 0)],
+      ['Net profit / loss', '', ...currencies.map(currency => netTotals[currency] || 0)],
+    ].map(row => `
+      <tr>
+        <td>${escapeHtml(row[0])}</td>
+        <td>${escapeHtml(row[1])}</td>
+        ${currencies.map((currency, index) => `<td class="${row[0] === 'Net profit / loss' ? 'net' : ''}">${escapeHtml(row[index + 2] || 0)}</td>`).join('')}
+      </tr>
+    `).join('');
+    const excelProfitRows = profitRows.length
+      ? profitRows.map((row, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td class="date">${escapeHtml(shortDate(row.created_at))}</td>
+            <td>${escapeHtml(row.contract_title || '-')}</td>
+            <td>${escapeHtml(row.contract_kind || row.source || '-')}</td>
+            <td>${escapeHtml(row.contract_no || '-')}</td>
+            ${currencies.map(currency => `<td class="money">${escapeHtml(amountForCurrency(row, currency))}</td>`).join('')}
+            <td>${escapeHtml(row.currency || 'USD')}</td>
+            <td>${escapeHtml(row.notes || '-')}</td>
+          </tr>
+        `).join('')
+      : `<tr><td colspan="${excelCols}" class="empty">${escapeHtml(text.noRecords)}</td></tr>`;
+    const excelExpenseRows = expenseRows.length
+      ? expenseRows.map((row, index) => {
+          const normalized = { ...row, currency: row.currency || 'USD' };
+          return `
+            <tr>
+              <td>${index + 1}</td>
+              <td class="date">${escapeHtml(shortDate(row.date || row.created_at))}</td>
+              <td>${escapeHtml(row.description || '-')}</td>
+              <td>${escapeHtml(row.category || '-')}</td>
+              <td>${escapeHtml(row.property || '-')}</td>
+              ${currencies.map(currency => `<td class="loss">${escapeHtml(amountForCurrency(normalized, currency))}</td>`).join('')}
+              <td>${escapeHtml(normalized.currency || 'USD')}</td>
+              <td>${escapeHtml(row.notes || '-')}</td>
+            </tr>
+          `;
+        }).join('')
+      : `<tr><td colspan="${excelCols}" class="empty">${escapeHtml(text.noRecords)}</td></tr>`;
+
+    return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Profit Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    table { border-collapse: collapse; font-family: Arial, Tahoma, sans-serif; font-size: 12pt; direction: ltr; }
+    col.no { width: 42px; }
+    col.date { width: 150px; }
+    col.title { width: 230px; }
+    col.type { width: 110px; }
+    col.no2 { width: 125px; }
+    col.money { width: 95px; }
+    col.currency { width: 85px; }
+    col.notes { width: 260px; }
+    td, th { border: 1px solid #cbd5e1; padding: 7px 9px; vertical-align: top; white-space: nowrap; }
+    .title { font-size: 20pt; font-weight: 800; color: #0f172a; background: #dbeafe; text-align: center; }
+    .meta { background: #f8fafc; color: #334155; font-weight: 700; }
+    .section { font-size: 14pt; font-weight: 800; color: #0f172a; background: #bfdbfe; }
+    .head { font-weight: 800; color: #334155; background: #eef2ff; }
+    .date { mso-number-format: "\\@"; }
+    .money, .net { color: #059669; font-weight: 800; mso-number-format: "0"; }
+    .loss { color: #dc2626; font-weight: 800; mso-number-format: "0"; }
+    .empty { color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <table>
+    <colgroup>
+      <col class="no"><col class="date"><col class="title"><col class="type"><col class="no2">
+      ${currencies.map(() => '<col class="money">').join('')}
+      <col class="currency"><col class="notes">
+    </colgroup>
+    <tr><td class="title" colspan="${excelCols}">${escapeHtml(profitLabel)}</td></tr>
+    <tr class="meta"><td>Agent</td><td colspan="2">${escapeHtml(selected?.name || '-')}</td><td>Username</td><td>${escapeHtml(selected?.username || '-')}</td><td colspan="${Math.max(1, currencies.length)}">Role: ${escapeHtml(role)}</td><td colspan="2">Generated: ${escapeHtml(generatedAt)}</td></tr>
+    <tr><td colspan="${excelCols}"></td></tr>
+    <tr><td class="section" colspan="${excelCols}">Summary</td></tr>
+    <tr class="head"><td>Type</td><td>Count</td>${currencies.map(currency => `<td>${escapeHtml(currency)}</td>`).join('')}<td colspan="${Math.max(1, excelCols - currencies.length - 2)}"></td></tr>
+    ${summary}
+    <tr><td colspan="${excelCols}"></td></tr>
+    <tr><td class="section" colspan="${excelCols}">${escapeHtml(profitLabel)}</td></tr>
+    <tr class="head"><td>#</td><td>${escapeHtml(text.date)}</td><td>${escapeHtml(text.title)}</td><td>${escapeHtml(text.type)}</td><td>${escapeHtml(text.receiptNo)}</td>${currencies.map(currency => `<td>${escapeHtml(currency)}</td>`).join('')}<td>${escapeHtml(t('currency'))}</td><td>${escapeHtml(text.description)}</td></tr>
+    ${excelProfitRows}
+    <tr><td colspan="${excelCols}"></td></tr>
+    <tr><td class="section" colspan="${excelCols}">${escapeHtml(text.expenses || 'Expenses / Loss')}</td></tr>
+    <tr class="head"><td>#</td><td>${escapeHtml(text.date)}</td><td>${escapeHtml(text.description)}</td><td>${escapeHtml(text.category)}</td><td>Property</td>${currencies.map(currency => `<td>${escapeHtml(currency)}</td>`).join('')}<td>${escapeHtml(t('currency'))}</td><td>${escapeHtml(text.notes || 'Notes')}</td></tr>
+    ${excelExpenseRows}
+  </table>
+</body>
+</html>`;
+  }
+
+  return `<!DOCTYPE html>
+<html dir="${dir}">
+<head>
+  <meta charset="UTF-8" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: A4 landscape; margin: 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: #0f172a;
+      font-family: Arial, Tahoma, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .report {
+      width: 100%;
+      padding: ${forExcel ? '18px' : '0'};
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid #4f7df3;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      color: #0f172a;
+      letter-spacing: 0;
+    }
+    .muted { color: #64748b; }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .meta-card {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .label {
+      display: block;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .value {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e2e8f0;
+    }
+    th {
+      background: #eef4ff;
+      color: #334155;
+      font-size: 10px;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid #cbd5e1;
+    }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .money { color: #059669; font-weight: 900; white-space: nowrap; }
+    .loss { color: #dc2626; font-weight: 900; white-space: nowrap; }
+    .empty { text-align: center; color: #64748b; padding: 24px; }
+    .section-title {
+      margin: 18px 0 8px;
+      font-size: 15px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    .footer {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      color: #64748b;
+      font-size: 11px;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <main class="report">
+    <header class="report-header">
+      <div>
+        <h1>${escapeHtml(profitLabel)}</h1>
+        <div class="muted">${escapeHtml(t('agentReports'))} / ${escapeHtml(selected?.name || selected?.username || '-')}</div>
+      </div>
+      <div class="muted">${escapeHtml(generatedAt)}</div>
+    </header>
+    <section class="meta">
+      <div class="meta-card"><span class="label">${escapeHtml(text.chooseAgent)}</span><span class="value">${escapeHtml(selected?.name || '-')}</span></div>
+      <div class="meta-card"><span class="label">Username</span><span class="value">${escapeHtml(selected?.username || '-')}</span></div>
+      <div class="meta-card"><span class="label">Role</span><span class="value">${escapeHtml(role)}</span></div>
+      <div class="meta-card"><span class="label">${escapeHtml(text.profitAmount || t('profitAmount'))}</span><span class="value">${escapeHtml(totalText(profitTotals, currencies))}</span></div>
+      <div class="meta-card"><span class="label">Net profit / loss</span><span class="value">${escapeHtml(totalText(netTotals, currencies))}</span></div>
+    </section>
+    <table>
+      <thead><tr><th>Type</th><th>Count</th><th>Totals by currency</th></tr></thead>
+      <tbody>
+        ${summaryRows.map(row => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td><td class="${row[0] === 'Net profit / loss' ? 'money' : ''}">${escapeHtml(row[2])}</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="section-title">${escapeHtml(profitLabel)}</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>${escapeHtml(text.date)}</th>
+          <th>${escapeHtml(text.title)}</th>
+          <th>${escapeHtml(text.type)}</th>
+          <th>${escapeHtml(text.receiptNo)}</th>
+          <th>${escapeHtml(text.profitAmount || t('profitAmount'))}</th>
+          <th>${escapeHtml(t('currency'))}</th>
+          <th>${escapeHtml(text.description)}</th>
+        </tr>
+      </thead>
+      <tbody>${profitTableRows}</tbody>
+    </table>
+    <div class="section-title">${escapeHtml(text.expenses || 'Expenses')}</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>${escapeHtml(text.date)}</th>
+          <th>${escapeHtml(text.description)}</th>
+          <th>${escapeHtml(text.category)}</th>
+          <th>${escapeHtml(text.amount)}</th>
+          <th>${escapeHtml(t('currency'))}</th>
+          <th>Property</th>
+        </tr>
+      </thead>
+      <tbody>${expenseTableRows}</tbody>
+    </table>
+    <div class="footer">
+      <span>${escapeHtml(profitRows.length)} ${escapeHtml(profitLabel)} / ${escapeHtml(expenseRows.length)} ${escapeHtml(text.expenses || 'Expenses')}</span>
+      <span>${escapeHtml(totalText(netTotals, currencies))}</span>
+    </div>
+  </main>
+</body>
+</html>`;
 }
 
 export default function AgentReports() {
@@ -160,6 +572,11 @@ export default function AgentReports() {
   const profitLabel = text.profitReport || t('profit');
   const exportLabel = text.exportExcel || t('exportExcel');
   const printLabel = text.print || t('print');
+  const getReportRole = role => {
+    if (role === 'developer') return 'Developer';
+    if (role === 'admin') return 'Owner';
+    return 'Agent';
+  };
 
   const statCards = [
     { label: text.receiveReceipts, value: totals.receipts || 0, meta: fmtMoney(totals.receiptAmount), icon: ReceiptText, accent: '#2563eb', dim: 'var(--primary-dim)' },
@@ -174,19 +591,7 @@ export default function AgentReports() {
 
   function exportProfitExcel() {
     if (!selected) return;
-    const rows = [
-      [text.date, text.title, text.type, text.receiptNo, text.profitAmount || t('profitAmount'), t('currency'), text.description],
-      ...(selected.profits || []).map(row => [
-        row.created_at,
-        row.contract_title || '',
-        row.contract_kind || row.source || '',
-        row.contract_no || '',
-        row.amount || 0,
-        row.currency || 'USD',
-        row.notes || '',
-      ]),
-    ];
-    const html = `<table>${rows.map(row => `<tr>${row.map(cell => `<td>${String(cell ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')}</td>`).join('')}</tr>`).join('')}</table>`;
+    const html = buildProfitReportHtml({ selected, text, t, profitLabel, forExcel: true });
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -194,6 +599,19 @@ export default function AgentReports() {
     a.download = `profit-report-${selected.username || selected.id}.xls`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function printProfitReport() {
+    if (!selected) return;
+    const win = window.open('', '_blank', 'width=980,height=720');
+    if (!win) return;
+    win.document.write(buildProfitReportHtml({ selected, text, t, profitLabel, forExcel: false }));
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      win.print();
+      setTimeout(() => win.close(), 800);
+    }, 250);
   }
 
   if (loading) {
@@ -228,7 +646,7 @@ export default function AgentReports() {
           </div>
           <div style={{ display: 'grid', gap: 10, padding: 16, maxHeight: 560, overflow: 'auto' }}>
             {filteredAgents.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)', padding: 12 }}>{text.noAgents}</div>
+              <div style={{ color: 'var(--text-muted)', padding: 12 }}>No users available.</div>
             ) : filteredAgents.map(agent => (
               <button
                 key={agent.id}
@@ -247,7 +665,7 @@ export default function AgentReports() {
                 <UserRound size={18} />
                 <span style={{ display: 'grid', textAlign: 'start' }}>
                   <strong>{agent.name || agent.username}</strong>
-                  <small style={{ opacity: 0.75 }}>{agent.username}</small>
+                  <small style={{ opacity: 0.75 }}>{agent.username} · {getReportRole(agent.role)}</small>
                 </span>
               </button>
             ))}
@@ -337,7 +755,7 @@ export default function AgentReports() {
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <h2>{profitLabel}</h2>
                   <div className="flex gap-2">
-                    <button className="btn btn-secondary btn-sm" onClick={() => window.print()}><Printer size={14} /> {printLabel}</button>
+                    <button className="btn btn-secondary btn-sm" onClick={printProfitReport}><Printer size={14} /> {printLabel}</button>
                     <button className="btn btn-primary btn-sm" onClick={exportProfitExcel}><Download size={14} /> {exportLabel}</button>
                   </div>
                 </div>

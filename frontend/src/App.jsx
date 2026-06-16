@@ -18,6 +18,7 @@ import Profit from './pages/Profit';
 import Expenses  from './pages/Expenses';
 import Reports   from './pages/Reports';
 import AgentReports from './pages/AgentReports';
+import ChangeReviewCenter from './pages/ChangeReviewCenter';
 import WhatsApp  from './pages/WhatsApp';
 import Settings  from './pages/Settings';
 import Users     from './pages/Users';
@@ -84,6 +85,7 @@ function App() {
                   <Route path="expenses"   element={<OperationalOnly><Expenses /></OperationalOnly>}  />
                   <Route path="reports"    element={<OperationalOnly><Reports /></OperationalOnly>}   />
                   <Route path="agent-reports" element={<AdminOnly><AgentReports /></AdminOnly>} />
+                  <Route path="change-review-center" element={<ManagerOnly><ChangeReviewCenter /></ManagerOnly>} />
                   <Route path="whatsapp"   element={<OperationalOnly><WhatsApp /></OperationalOnly>}  />
                   <Route path="receipts"      element={<OperationalOnly><Receipts /></OperationalOnly>}     />
                   <Route path="receipts/new"  element={<OperationalOnly><Receipts mode="form" /></OperationalOnly>} />

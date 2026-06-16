@@ -112,10 +112,12 @@ router.get('/reports', auth, managerOnly, (req, res) => {
     });
   }
 
+  const owner = db.prepare(`SELECT * FROM users WHERE id = ?`).get(req.user.id);
   const agents = db.prepare(`SELECT * FROM users WHERE role = 'agent' AND created_by = ? ORDER BY id ASC`).all(req.user.id);
+  const reportUsers = [owner, ...agents].filter(Boolean);
   res.json({
     role: 'admin',
-    agents: agents.map(agent => ({
+    agents: reportUsers.map(agent => ({
       ...safe(agent),
       ...userStats(agent.id),
     })),

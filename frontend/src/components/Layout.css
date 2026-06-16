@@ -17,18 +17,23 @@
   position: relative;
 }
 
-.global-attention {
+.global-attention-wrap {
   position: fixed;
   top: 18px;
-  right: 22px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 80;
+}
+
+.global-attention {
+  position: relative;
   min-width: 46px;
   height: 42px;
   padding: 0 13px;
-  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface);
-  color: var(--danger);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -37,7 +42,12 @@
   cursor: pointer;
 }
 
-.global-attention::before {
+.global-attention.has-items {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  color: var(--danger);
+}
+
+.global-attention.has-items::before {
   content: '';
   position: absolute;
   top: 6px;
@@ -52,6 +62,116 @@
 .global-attention span {
   font-size: 13px;
   font-weight: 900;
+}
+
+.global-attention-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  width: min(360px, calc(100vw - 28px));
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 46%),
+    var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.18);
+  padding: 14px;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.global-attention-popover::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%) rotate(45deg);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 96%, var(--primary) 4%);
+}
+
+.global-attention-popover strong {
+  display: block;
+  margin-bottom: 12px;
+  padding-inline: 2px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.global-attention-popover ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.global-attention-popover li {
+  margin: 0;
+}
+
+.global-attention-popover li button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 10px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-soft) 86%, var(--surface));
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition), color var(--transition);
+}
+
+.global-attention-popover li button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  color: var(--text-primary);
+}
+
+.attention-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.global-attention-popover li button > span:not(.attention-item-icon) {
+  flex: 1;
+  min-width: 0;
+}
+
+.global-attention-popover b {
+  min-width: 28px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger-light);
+  color: var(--danger);
+  flex: 0 0 auto;
+}
+
+.global-attention-popover p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .page-content {
@@ -83,12 +203,29 @@
     backdrop-filter: blur(14px);
   }
 
-  .global-attention {
+  .global-attention-wrap {
     top: 10px;
+    left: auto;
     right: 62px;
+    transform: none;
+    z-index: 96;
+  }
+
+  .global-attention {
     height: 40px;
     min-width: 42px;
-    z-index: 96;
+  }
+
+  .global-attention-popover {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .global-attention-popover::before {
+    left: auto;
+    right: 18px;
+    transform: rotate(45deg);
   }
 
   .mobile-menu-btn {

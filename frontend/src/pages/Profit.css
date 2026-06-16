@@ -4,6 +4,35 @@
   flex-wrap: wrap;
 }
 
+.profit-actions .icon-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.profit-actions .icon-btn:hover {
+  transform: translateY(-1px);
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.profit-actions .icon-btn.danger {
+  color: var(--danger);
+}
+
+.profit-actions .icon-btn.danger:hover {
+  background: var(--danger-light);
+  border-color: var(--danger);
+}
+
 .profit-filters {
   margin-bottom: 18px;
   padding: 18px;
