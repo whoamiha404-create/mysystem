@@ -52,7 +52,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="stat-grid" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+      <div className="stat-grid">
         {[
           {icon:CheckCircle2,label:t('totalCollected'),value:sym+collected.toLocaleString(),  sub:allPay.filter(p=>p.status==='paid').length+' '+t('paidStatus'), accent:'#059669',dim:'var(--success-dim)'},
           {icon:Clock3,label:t('outstanding'),    value:sym+outstanding.toLocaleString(),sub:allPay.filter(p=>p.status!=='paid').length+' '+t('pendingStatus'),accent:'#d97706',dim:'var(--warning-dim)'},
@@ -68,7 +68,7 @@ export default function Reports() {
         ))}
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+      <div className="reports-detail-grid">
         <div className="card">
           <div className="card-header"><h3>{t('revenueByTenant')}</h3></div>
           <div className="table-wrap">

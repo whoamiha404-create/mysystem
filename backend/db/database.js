@@ -93,6 +93,7 @@ db.exec(`
     tenant_phone  TEXT DEFAULT '',
     apt           TEXT DEFAULT '',
     location      TEXT DEFAULT '',
+    property_type TEXT DEFAULT '',
     owner         TEXT DEFAULT '',
     owner_phone   TEXT DEFAULT '',
     month         TEXT DEFAULT '',
@@ -178,6 +179,7 @@ function ensureColumn(table, column, definition) {
 }
 
 ensureColumn('receipts', 'instead', "TEXT DEFAULT ''");
+ensureColumn('receipts', 'property_type', "TEXT DEFAULT ''");
 ensureColumn('tenants', 'user_id', 'INTEGER');
 ensureColumn('expenses', 'user_id', 'INTEGER');
 ensureColumn('receipts', 'user_id', 'INTEGER');

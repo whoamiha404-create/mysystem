@@ -5,7 +5,35 @@ import Modal from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 
-const EMPTY = { name:'', phone:'964', apt:'', location:'', owner:'', owner_phone:'', rent:'', pay_day:'1', type:'residential', contract_start:'', contract_end:'', notes:'' };
+const PROPERTY_TYPES = [
+  'شوقە',
+  'خانوو',
+  'باخ',
+  'دوکان',
+  'ڤێلا',
+  'زەوی',
+  'هەیکەل',
+  'بەنزینخان',
+  'کارگە',
+  'هۆڵی لەشجوانی',
+  'شوشتنگەی ئۆتۆمبێل',
+  'کۆگا',
+  'چێشتخانە',
+  'ئۆفیس',
+  'باڵەخانە',
+  'ئارایشتگا',
+  'کۆمەلگەی نیشتەجێبوون',
+  'زەوەی کشتوکاڵی تاپۆ',
+  'زەوی کشتوکاڵی بێ تاپۆ',
+  'زەوی کشتوکاڵی حکومەت',
+  'زەوی استسمار',
+  'زەوی مساتحە',
+  'قوتابخانە',
+  'بالەخانە استسمار',
+  'بالەخانەی مساتحە',
+];
+
+const EMPTY = { name:'', phone:'964', apt:'', location:'', owner:'', owner_phone:'', rent:'', pay_day:'1', type:PROPERTY_TYPES[0], contract_start:'', contract_end:'', notes:'' };
 const TYPE_COLORS = { residential:'badge-blue', villa:'badge-purple', commercial:'badge-amber', office:'badge-gray' };
 
 export default function Tenants() {
@@ -62,12 +90,7 @@ export default function Tenants() {
     } catch(e) { toast(e.message, 'error'); } finally { setSaving(false); }
   }
 
-  const types = [
-    { value:'residential', label:t('residential') },
-    { value:'villa',       label:t('villa')        },
-    { value:'commercial',  label:t('commercial')   },
-    { value:'office',      label:t('office')       },
-  ];
+  const types = PROPERTY_TYPES.map(type => ({ value:type, label:type }));
 
   const stats = {
     total:   tenants.length,
@@ -110,7 +133,7 @@ export default function Tenants() {
       )}
 
       {/* Quick stats */}
-      <div className="stat-grid" style={{ gridTemplateColumns:'repeat(4,1fr)', marginBottom:20 }}>
+      <div className="stat-grid" style={{ marginBottom:20 }}>
         {[
           { icon:UserRound, label:t('totalTenants'), value:stats.total,   accent:'#1d4ed8', dim:'var(--primary-dim)'  },
           { icon:CheckCircle2, label:t('allPaidLabel'), value:stats.allPaid, accent:'#059669', dim:'var(--success-dim)'  },

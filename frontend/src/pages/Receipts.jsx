@@ -60,6 +60,9 @@ function printReceipt(data) {
   const amtFmt   = sym + Number(data.amount).toLocaleString();
   const amtWords = amountToWords(data.amount, data.currency);
   const period   = formatReceiptPeriod(data.month);
+  const receiptReason = data.instead === 'کرێی مانگانە' && data.propertyType
+    ? `${data.instead}ی ${data.propertyType}`
+    : (data.instead || 'کرێی مانگانە');
 
   const block = `<div style="width:100%;padding-top:2cm;padding-bottom:0.0cm;padding-right:2.5cm;padding-left:2.5cm;font-family:'NRT','Cairo',sans-serif;direction:rtl;background:transparent;box-sizing:border-box;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -81,7 +84,7 @@ function printReceipt(data) {
         </tr>
         <tr style="background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
           <td style="padding:9px 10px;color:#555;text-align:right;vertical-align:top;">لە بڕی / وذلك عن :</td>
-          <td style="padding:9px 10px;text-align:center;line-height:1.7;"><div>${data.instead||'کرێی مانگانە'} (${data.tenantName}) ژماره (${data.apt})${data.location?' لە ('+data.location+')':''}</div><div>${period}</div></td>
+          <td style="padding:9px 10px;text-align:center;line-height:1.7;"><div>${receiptReason} (${data.tenantName}) ژماره (${data.apt})${data.location?' لە ('+data.location+')':''}</div><div dir="ltr" style="direction:ltr;unicode-bidi:isolate;text-align:center;">${period}</div></td>
           <td style="padding:9px 10px;color:#555;text-align:left;direction:ltr;vertical-align:top;">For :</td>
         </tr>
         <tr style="background:transparent;">
@@ -131,9 +134,9 @@ function printReceipt(data) {
 
 // ── Translations ──
 const TX = {
-  en: { newTab:'New Receipt', histTab:'History', search:'Search by name, apartment, phone or month...', rcvFrom:'Received From', amount:'Amount', givenTo:'Given to sir', currency:'Currency', insteadOf:'Instead of', month:'Month', note:'Note', save:'SAVE & PRINT', update:'UPDATE & PRINT', newPage:'NEW PAGE', noHist:'No receipts saved yet.', histSearch:'Search receipts...', loading:'Loading...', selectFirst:'Please select a tenant first', ownerWA:'WhatsApp will be sent to owner', noOwner:'No owner phone — print only', deleted:'Deleted', waSent:'Sent', refresh:'Refresh', preview:'Preview', print:'Print', edit:'Edit', delete:'Delete', tenant:'Tenant', apt:'Apt', receiver:'Receiver', date:'Date', noResults:'No results' },
-  ar: { newTab:'إيصال جديد', histTab:'السجل', search:'ابحث بالاسم أو الشقة...', rcvFrom:'المستلم', amount:'المبلغ', givenTo:'سُلِّم إلى', currency:'العملة', insteadOf:'وذلك عن', month:'الشهر', note:'الملاحظات', save:'حفظ وطباعة', update:'تحديث وطباعة', newPage:'صفحة جديدة', noHist:'لا توجد إيصالات.', histSearch:'ابحث...', loading:'جاري التحميل...', selectFirst:'اختر مستأجراً أولاً', ownerWA:'سيتم إرسال واتساب للمالك', noOwner:'لا يوجد هاتف للمالك', deleted:'تم الحذف', waSent:'أُرسل', refresh:'تحديث', preview:'معاينة', print:'طباعة', edit:'تعديل', delete:'حذف', tenant:'المستأجر', apt:'الشقة', receiver:'المستلم', date:'التاريخ', noResults:'لا توجد نتائج' },
-  ku: { newTab:'پسوولەی نوێ', histTab:'مێژوو', search:'گەڕان بە ناو، خانوو، مۆبایل یان مانگ...', rcvFrom:'وەرگر', amount:'بڕی پارە', givenTo:'درا بە', currency:'دراو', insteadOf:'لە بڕی', month:'مانگ', note:'تێبینی', save:'پاشەکەوت و چاپکردن', update:'نوێکردنەوە و چاپکردن', newPage:'پەڕەی نوێ', noHist:'هیچ پسوولەیەک نییە.', histSearch:'گەڕان لە پسوولەکان...', loading:'چاوەڕوانبە...', selectFirst:'تکایە بنکەنشینێک هەڵبژێرە', ownerWA:'واتساپ دەنێردرێت بۆ خاوەنەکە', noOwner:'ژمارەی خاوەن نییە', deleted:'سڕایەوە', waSent:'نێردرا', refresh:'نوێکردنەوە', preview:'پێشبینین', print:'چاپ', edit:'دەستکاری', delete:'سڕینەوە', tenant:'بنکەنشین', apt:'خانوو', receiver:'وەرگر', date:'بەروار', noResults:'ئەنجام نییە' },
+  en: { newTab:'New Receipt', histTab:'History', search:'Search by name, apartment or phone...', rcvFrom:'Received From', amount:'Amount', givenTo:'Given to sir', currency:'Currency', insteadOf:'Instead of', month:'Month', note:'Note', save:'SAVE & PRINT', update:'UPDATE & PRINT', newPage:'NEW PAGE', noHist:'No receipts saved yet.', histSearch:'Search receipts...', loading:'Loading...', selectFirst:'Please select a tenant first', ownerWA:'WhatsApp will be sent to owner', noOwner:'No owner phone — print only', deleted:'Deleted', waSent:'Sent', refresh:'Refresh', preview:'Preview', print:'Print', edit:'Edit', delete:'Delete', tenant:'Tenant', apt:'Apt', receiver:'Receiver', date:'Date', noResults:'No results' },
+  ar: { newTab:'إيصال جديد', histTab:'السجل', search:'ابحث بالاسم أو الشقة أو الهاتف...', rcvFrom:'المستلم', amount:'المبلغ', givenTo:'سُلِّم إلى', currency:'العملة', insteadOf:'وذلك عن', month:'الشهر', note:'الملاحظات', save:'حفظ وطباعة', update:'تحديث وطباعة', newPage:'صفحة جديدة', noHist:'لا توجد إيصالات.', histSearch:'ابحث...', loading:'جاري التحميل...', selectFirst:'اختر مستأجراً أولاً', ownerWA:'سيتم إرسال واتساب للمالك', noOwner:'لا يوجد هاتف للمالك', deleted:'تم الحذف', waSent:'أُرسل', refresh:'تحديث', preview:'معاينة', print:'طباعة', edit:'تعديل', delete:'حذف', tenant:'المستأجر', apt:'الشقة', receiver:'المستلم', date:'التاريخ', noResults:'لا توجد نتائج' },
+  ku: { newTab:'پسوولەی نوێ', histTab:'مێژوو', search:'گەڕان بە ناو، خانوو یان مۆبایل...', rcvFrom:'وەرگر', amount:'بڕی پارە', givenTo:'درا بە', currency:'دراو', insteadOf:'لە بڕی', month:'مانگ', note:'تێبینی', save:'پاشەکەوت و چاپکردن', update:'نوێکردنەوە و چاپکردن', newPage:'پەڕەی نوێ', noHist:'هیچ پسوولەیەک نییە.', histSearch:'گەڕان لە پسوولەکان...', loading:'چاوەڕوانبە...', selectFirst:'تکایە بنکەنشینێک هەڵبژێرە', ownerWA:'واتساپ دەنێردرێت بۆ خاوەنەکە', noOwner:'ژمارەی خاوەن نییە', deleted:'سڕایەوە', waSent:'نێردرا', refresh:'نوێکردنەوە', preview:'پێشبینین', print:'چاپ', edit:'دەستکاری', delete:'سڕینەوە', tenant:'بنکەنشین', apt:'خانوو', receiver:'وەرگر', date:'بەروار', noResults:'ئەنجام نییە' },
 };
 
 const cleanIconLabel = (value) => String(value || '').replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, '').trim();
@@ -142,16 +145,53 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'dolar' },
   { value: 'IQD', label: 'دیناری عێراقی' },
 ];
+const PROPERTY_TYPES = [
+  'شوقە',
+  'خانوو',
+  'باخ',
+  'دوکان',
+  'ڤێلا',
+  'زەوی',
+  'هەیکەل',
+  'بەنزینخان',
+  'کارگە',
+  'هۆڵی لەشجوانی',
+  'شوشتنگەی ئۆتۆمبێل',
+  'کۆگا',
+  'چێشتخانە',
+  'ئۆفیس',
+  'باڵەخانە',
+  'ئارایشتگا',
+  'کۆمەلگەی نیشتەجێبوون',
+  'زەوەی کشتوکاڵی تاپۆ',
+  'زەوی کشتوکاڵی بێ تاپۆ',
+  'زەوی کشتوکاڵی حکومەت',
+  'زەوی استسمار',
+  'زەوی مساتحە',
+  'قوتابخانە',
+  'بالەخانە استسمار',
+  'بالەخانەی مساتحە',
+];
+const PROPERTY_TYPE_LABEL = {
+  en: 'Property Type',
+  ar: 'نوع العقار',
+  ku: 'جۆری موڵک',
+};
 const EDIT_RECEIPT_KEY = 'rentpro_edit_receive_receipt';
 const RECEIPT_FONT = "'NRT', 'NRT Bold', 'Rabar', 'Cairo', Tahoma, Arial, sans-serif";
-const EMPTY = (cur) => ({ tenantName:'', tenantPhone:'', apt:'', location:'', owner:'', owner_phone:'', month:'', amount:'', currency:cur||'USD', receiver:'جمشیر شوان', instead:RECEIPT_REASONS[0], notes:'', payment_id:null, tenant_id:null, receipt_no:'' });
+const EMPTY = (cur) => ({ tenantName:'', tenantPhone:'', apt:'', location:'', propertyType:PROPERTY_TYPES[0], owner:'', owner_phone:'', month:'', amount:'', currency:cur||'USD', receiver:'جمشیر شوان', instead:RECEIPT_REASONS[0], notes:'', payment_id:null, tenant_id:null, receipt_no:'' });
 
-function receiptRowToForm(row, fallbackCurrency = 'USD') {
+function receiptRowToForm(row, fallbackCurrency = 'USD', tenants = []) {
+  const tenant = tenants.find(item =>
+    (row.tenant_id && Number(item.id) === Number(row.tenant_id))
+    || (item.name === row.tenant_name && item.apt === row.apt)
+  );
   return {
     tenantName: row.tenant_name || '',
     tenantPhone: row.tenant_phone || '',
     apt: row.apt || '',
     location: row.location || '',
+    propertyType: row.property_type || row.propertyType || tenant?.type || '',
     owner: row.owner || '',
     owner_phone: row.owner_phone || '',
     month: row.month || '',
@@ -182,7 +222,7 @@ export default function Receipts({ mode = 'history' }) {
   const [history,    setHistory]    = useState([]);
   const [histErr,    setHistErr]    = useState('');
   const [histSearch, setHistSearch] = useState('');
-  const [histLoad,   setHistLoad]   = useState(false);
+  const [histLoad,   setHistLoad]   = useState(true);
   const tab = isFormMode ? 'new' : 'history';
   const [waStatus,   setWaStatus]   = useState('init');
   const [saving,     setSaving]     = useState(false);
@@ -209,7 +249,7 @@ export default function Receipts({ mode = 'history' }) {
           try {
             const editRow = JSON.parse(editRaw);
             setEditingId(editRow.id || null);
-            setForm(receiptRowToForm(editRow, s?.currency || 'USD'));
+            setForm(receiptRowToForm(editRow, s?.currency || 'USD', ts || []));
           } catch {
             setForm(EMPTY(s?.currency||'USD'));
           }
@@ -228,27 +268,39 @@ export default function Receipts({ mode = 'history' }) {
     return () => document.removeEventListener('mousedown', close);
   }, []);
 
+  const receiptedPaymentIds = new Set(
+    history
+      .map(receipt => receipt.payment_id)
+      .filter(Boolean)
+      .map(String)
+  );
   const paidPayments = [];
-  tenants.forEach(ten => (ten.payments||[]).filter(p=>p.status==='paid').forEach(p => paidPayments.push({tenant:ten,payment:p})));
+  tenants.forEach(ten => (ten.payments||[])
+    .filter(payment => payment.status === 'paid' && !receiptedPaymentIds.has(String(payment.id)))
+    .forEach(payment => paidPayments.push({ tenant:ten, payment })));
 
-  const dropList = search.trim()
+  const dropList = histLoad ? [] : search.trim()
     ? paidPayments.filter(({tenant,payment}) => [tenant.name,tenant.phone,tenant.apt,payment.month].join(' ').toLowerCase().includes(search.toLowerCase()))
     : paidPayments.slice(0,12);
 
   function selectPayment(tenant, payment) {
-    setForm(f => ({...f, tenantName:tenant.name, tenantPhone:tenant.phone, apt:tenant.apt, location:tenant.location||'', owner:tenant.owner||'', owner_phone:tenant.owner_phone||'', month:payment.month, amount:String(payment.amount), payment_id:payment.id, tenant_id:tenant.id }));
+    setForm(f => ({...f, tenantName:tenant.name, tenantPhone:tenant.phone, apt:tenant.apt, location:tenant.location||'', propertyType:tenant.type||'', owner:tenant.owner||'', owner_phone:tenant.owner_phone||'', month:payment.month, amount:String(payment.amount), payment_id:payment.id, tenant_id:tenant.id }));
     setSearch(''); setShowDrop(false);
   }
 
   const setF = (k,v) => setForm(f=>({...f,[k]:v}));
 
   function editReceipt(row) {
-    sessionStorage.setItem(EDIT_RECEIPT_KEY, JSON.stringify(row));
+    const tenant = tenants.find(item =>
+      (row.tenant_id && Number(item.id) === Number(row.tenant_id))
+      || (item.name === row.tenant_name && item.apt === row.apt)
+    );
+    sessionStorage.setItem(EDIT_RECEIPT_KEY, JSON.stringify({ ...row, propertyType:tenant?.type || '' }));
     navigate('/receipts/new');
   }
 
   function printHistoryReceipt(row) {
-    printReceipt(receiptRowToForm(row, settings.currency || 'USD'));
+    printReceipt(receiptRowToForm(row, settings.currency || 'USD', tenants));
   }
 
   function resetForm() {
@@ -259,16 +311,17 @@ export default function Receipts({ mode = 'history' }) {
   async function handleSaveAndPrint() {
     if (!form.tenantName) { toast(tx.selectFirst,'warning'); return; }
     printReceipt(form);
+    const isManualReceipt = !form.payment_id;
     let waSent = false;
     let liveWaStatus = waStatus;
-    if (form.owner_phone) {
+    if (!isManualReceipt && form.owner_phone) {
       try {
         const status = await api.waStatus();
         liveWaStatus = status?.state || 'init';
         setWaStatus(liveWaStatus);
       } catch {}
     }
-    if (liveWaStatus==='ready' && form.owner_phone) {
+    if (!isManualReceipt && liveWaStatus==='ready' && form.owner_phone) {
       try {
         const sym = {USD:'$',IQD:'د.ع',EUR:'€'}[form.currency]||'$';
         await api.waSend(form.owner_phone, `عقارات هۆپ زۆن  \n\nسڵاو بەڕێز ${form.owner},\nکرێی مانگی ${form.month} بۆ مولکی ${form.apt} وەرگیراوە دەتوانی بێی سەردانامان بکەی.\nکرێچی: ${form.tenantName}\nبڕی پارە: ${sym}${form.amount}\n\nلەگەل رێزدا عقارات هۆپ زۆن  `, true);
@@ -277,7 +330,7 @@ export default function Receipts({ mode = 'history' }) {
     }
     setSaving(true);
     try {
-      const payload = { receipt_no:form.receipt_no || (form.payment_id?String(form.payment_id).padStart(4,'0'):Date.now().toString().slice(-6)), payment_id:form.payment_id, tenant_id:form.tenant_id, tenant_name:form.tenantName, tenant_phone:form.tenantPhone, apt:form.apt, location:form.location, owner:form.owner, owner_phone:form.owner_phone, month:form.month, amount:parseFloat(form.amount)||0, currency:form.currency, paid_date:new Date().toISOString().slice(0,10), receiver_name:form.receiver, instead:form.instead, notes:form.notes, wa_sent:waSent };
+      const payload = { receipt_no:form.receipt_no || (form.payment_id?String(form.payment_id).padStart(4,'0'):Date.now().toString().slice(-6)), payment_id:form.payment_id, tenant_id:form.tenant_id, tenant_name:form.tenantName, tenant_phone:form.tenantPhone, apt:form.apt, location:form.location, property_type:form.propertyType, owner:form.owner, owner_phone:form.owner_phone, month:form.month, amount:parseFloat(form.amount)||0, currency:form.currency, paid_date:new Date().toISOString().slice(0,10), receiver_name:form.receiver, instead:form.instead, notes:form.notes, wa_sent:waSent };
       if (editingId) await api.updateReceipt(editingId, payload);
       else await api.saveReceipt(payload);
       toast('Saved','success'); loadHistory();
@@ -319,7 +372,7 @@ export default function Receipts({ mode = 'history' }) {
 
       {/* ══ NEW RECEIPT ══ */}
       {tab==='new' && (
-        <div style={{background:'var(--surface,#fff)',border:'1px solid #e2e8f0',borderRadius:12,padding:28,maxWidth:900}}>
+        <div className="receipt-form-card" style={{background:'var(--surface,#fff)',border:'1px solid #e2e8f0',borderRadius:12,padding:28,maxWidth:900}}>
 
           {/* Search */}
           <div style={{marginBottom:24,position:'relative'}} ref={dropRef}>
@@ -346,16 +399,17 @@ export default function Receipts({ mode = 'history' }) {
           </div>
 
           {/* Form */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'18px 40px'}}>
-            <div style={frow}><span style={lbl}>{tx.rcvFrom}:</span><input style={inp} value={form.tenantName} onChange={e=>setF('tenantName',e.target.value)} /></div>
-            <div style={frow}><span style={lbl}>{tx.amount}:</span><input style={inp} value={form.amount} onChange={e=>setF('amount',e.target.value)} placeholder="0" type="number" /></div>
-            <div style={frow}><span style={lbl}>{tx.givenTo}:</span><input style={{...inp,direction:'rtl'}} value={form.receiver} onChange={e=>setF('receiver',e.target.value)} /></div>
-            <div style={frow}><span style={lbl}>{tx.currency}:</span>
+          <div className="receipt-form-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'18px 40px'}}>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.rcvFrom}:</span><input style={inp} value={form.tenantName} onChange={e=>setF('tenantName',e.target.value)} /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.amount}:</span><input style={inp} value={form.amount} onChange={e=>setF('amount',e.target.value)} placeholder="0" type="number" /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.givenTo}:</span><input style={{...inp,direction:'rtl'}} value={form.receiver} onChange={e=>setF('receiver',e.target.value)} /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.currency}:</span>
               <ReceiptDropdown value={form.currency} options={CURRENCY_OPTIONS} onChange={value => setF('currency', value)} rtl={isRtl} />
             </div>
-            <div style={frow}><span style={lbl}>{tx.insteadOf}:</span><ReceiptDropdown value={form.instead} options={RECEIPT_REASONS} onChange={value => setF('instead', value)} rtl /><input style={{...inp,width:130}} value={form.month} onChange={e=>setF('month',e.target.value)} placeholder={tx.month} /></div>
-            <div style={frow}><span style={lbl}>Location:</span><input style={inp} value={form.location} onChange={e=>setF('location',e.target.value)} /><span style={{...lbl,marginInlineStart:8}}>Apt:</span><input style={{...inp,width:90}} value={form.apt} onChange={e=>setF('apt',e.target.value)} /></div>
-            <div style={{...frow,gridColumn:'1/-1'}}><span style={lbl}>{tx.note}:</span><input style={inp} value={form.notes} onChange={e=>setF('notes',e.target.value)} /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.insteadOf}:</span><ReceiptDropdown value={form.instead} options={RECEIPT_REASONS} onChange={value => setF('instead', value)} rtl /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{PROPERTY_TYPE_LABEL[lang] || PROPERTY_TYPE_LABEL.en}:</span><ReceiptDropdown value={form.propertyType} options={PROPERTY_TYPES} onChange={value => setF('propertyType', value)} rtl={isRtl} /></div>
+            <div className="receipt-form-row receipt-location-row" style={frow}><span style={lbl}>Location:</span><input style={inp} value={form.location} onChange={e=>setF('location',e.target.value)} /><span style={{...lbl,marginInlineStart:8}}>Apt:</span><input style={{...inp,width:90}} value={form.apt} onChange={e=>setF('apt',e.target.value)} /></div>
+            <div className="receipt-form-row receipt-form-wide" style={{...frow,gridColumn:'1/-1'}}><span style={lbl}>{tx.note}:</span><input style={inp} value={form.notes} onChange={e=>setF('notes',e.target.value)} /></div>
           </div>
 
           {/* Amount words preview */}
@@ -366,7 +420,7 @@ export default function Receipts({ mode = 'history' }) {
           )}
 
           {/* Owner notice */}
-          {form.tenantName && (
+          {form.payment_id && form.tenantName && (
             <div style={{marginTop:10,padding:'8px 14px',borderRadius:8,fontSize:13,background:form.owner_phone?'#f0fdf4':'#fef9c3',border:`1px solid ${form.owner_phone?'#86efac':'#fde047'}`}}>
               {form.owner_phone?`${tx.ownerWA}: ${form.owner} (${form.owner_phone})`:`${tx.noOwner}`}
             </div>
@@ -402,7 +456,7 @@ export default function Receipts({ mode = 'history' }) {
                   <table style={{width:'100%',borderCollapse:'collapse',fontSize:14}}>
                     <thead>
                       <tr style={{background:'#f8fafc',color:'#64748b',fontSize:12,textTransform:'uppercase'}}>
-                        {['#',tx.tenant,tx.apt,tx.month,tx.amount,tx.receiver,'WA',tx.date,''].map((h,i)=>(
+                        {['#',tx.tenant,PROPERTY_TYPE_LABEL[lang] || PROPERTY_TYPE_LABEL.en,tx.apt,tx.amount,tx.receiver,'WA',tx.date,''].map((h,i)=>(
                           <th key={i} style={{padding:'10px 14px',textAlign:isRtl?'right':'left',fontWeight:700}}>{h}</th>
                         ))}
                       </tr>
@@ -412,8 +466,8 @@ export default function Receipts({ mode = 'history' }) {
                         <tr key={r.id} style={{borderTop:'1px solid #f1f5f9'}}>
                           <td style={{padding:'10px 14px',fontWeight:700,color:'#c8a400'}}>{r.receipt_no}</td>
                           <td style={{padding:'10px 14px',fontWeight:600}}>{r.tenant_name}</td>
+                          <td style={{padding:'10px 14px'}}>{r.property_type || tenants.find(tn => Number(tn.id) === Number(r.tenant_id))?.type || '-'}</td>
                           <td style={{padding:'10px 14px'}}>{r.apt}</td>
-                          <td style={{padding:'10px 14px'}}>{r.month}</td>
                           <td style={{padding:'10px 14px',fontWeight:700,color:'#d97706'}}>{r.amount} {r.currency}</td>
                           <td style={{padding:'10px 14px',direction:'rtl'}}>{r.receiver_name||'—'}</td>
                           <td style={{padding:'10px 14px'}}><span style={{background:r.wa_sent?'#dcfce7':'#f1f5f9',color:r.wa_sent?'#16a34a':'#94a3b8',padding:'2px 10px',borderRadius:20,fontSize:12,fontWeight:700}}>{r.wa_sent?''+tx.waSent:'—'}</span></td>
@@ -440,7 +494,7 @@ export default function Receipts({ mode = 'history' }) {
         <div onClick={()=>setPreview(null)} style={{position:'fixed',inset:0,zIndex:300,background:'rgba(15,23,42,.45)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{width:'min(520px,100%)',background:'var(--surface,#fff)',border:'1px solid #e2e8f0',borderRadius:10,padding:20,boxShadow:'0 20px 60px rgba(0,0,0,.25)'}}>
             <h3 style={{marginBottom:14,color:'#c8a400'}}>{tx.preview} #{preview.receipt_no}</h3>
-            {[['#',preview.receipt_no],[tx.tenant,preview.tenant_name],[tx.apt,preview.apt],[tx.month,preview.month],[tx.amount,`${preview.amount} ${preview.currency}`],[tx.insteadOf,preview.instead],[tx.receiver,preview.receiver_name],[tx.note,preview.notes]].map(([label,value])=>(
+            {[['#',preview.receipt_no],[tx.tenant,preview.tenant_name],[PROPERTY_TYPE_LABEL[lang] || PROPERTY_TYPE_LABEL.en,preview.property_type || tenants.find(tn => Number(tn.id) === Number(preview.tenant_id))?.type],[tx.apt,preview.apt],[tx.amount,`${preview.amount} ${preview.currency}`],[tx.insteadOf,preview.instead],[tx.receiver,preview.receiver_name],[tx.note,preview.notes]].map(([label,value])=>(
               <div key={label} style={{display:'grid',gridTemplateColumns:'150px 1fr',gap:12,padding:'7px 0',borderBottom:'1px solid #f1f5f9'}}>
                 <strong>{label}</strong><span>{value || '-'}</span>
               </div>

@@ -44,7 +44,7 @@ const TARGETS = {
       db.prepare(`
         UPDATE receipts SET
           receipt_no = ?, payment_id = ?, tenant_id = ?, tenant_name = ?, tenant_phone = ?,
-          apt = ?, location = ?, owner = ?, owner_phone = ?, month = ?, amount = ?,
+          apt = ?, location = ?, property_type = ?, owner = ?, owner_phone = ?, month = ?, amount = ?,
           currency = ?, paid_date = ?, receiver_name = ?, instead = ?, notes = ?, wa_sent = ?
         WHERE id = ?
       `).run(
@@ -55,6 +55,7 @@ const TARGETS = {
         next.tenant_phone || '',
         next.apt || '',
         next.location || '',
+        next.property_type || '',
         next.owner || '',
         next.owner_phone || '',
         next.month || '',

@@ -34,6 +34,7 @@ router.post('/', auth, (req, res) => {
     tenant_phone,
     apt,
     location,
+    property_type,
     owner,
     owner_phone,
     month,
@@ -53,8 +54,8 @@ router.post('/', auth, (req, res) => {
   const result = db.prepare(`
     INSERT INTO receipts (
       receipt_no, payment_id, tenant_id, tenant_name, tenant_phone, apt, location,
-      owner, owner_phone, month, amount, currency, paid_date, receiver_name, instead, notes, wa_sent, user_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      property_type, owner, owner_phone, month, amount, currency, paid_date, receiver_name, instead, notes, wa_sent, user_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     receipt_no,
     payment_id || null,
@@ -63,6 +64,7 @@ router.post('/', auth, (req, res) => {
     tenant_phone || '',
     apt || '',
     location || '',
+    property_type || '',
     owner || '',
     owner_phone || '',
     month || '',
@@ -95,6 +97,7 @@ router.put('/:id', auth, (req, res) => {
     tenant_phone,
     apt,
     location,
+    property_type,
     owner,
     owner_phone,
     month,
@@ -121,6 +124,7 @@ router.put('/:id', auth, (req, res) => {
       tenant_phone = ?,
       apt = ?,
       location = ?,
+      property_type = ?,
       owner = ?,
       owner_phone = ?,
       month = ?,
@@ -140,6 +144,7 @@ router.put('/:id', auth, (req, res) => {
     tenant_phone ?? existing.tenant_phone,
     apt ?? existing.apt,
     location ?? existing.location,
+    property_type ?? existing.property_type,
     owner ?? existing.owner,
     owner_phone ?? existing.owner_phone,
     month ?? existing.month,

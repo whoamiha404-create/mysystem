@@ -109,7 +109,7 @@ export default function WhatsApp() {
         )}
       </div>
 
-      <div style={{display:'grid', gridTemplateColumns:'380px 1fr', gap:20, alignItems:'start'}}>
+      <div className="whatsapp-layout">
 
         {/* ── Left column ── */}
         <div style={{display:'flex', flexDirection:'column', gap:16}}>

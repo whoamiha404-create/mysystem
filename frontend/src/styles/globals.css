@@ -733,6 +733,131 @@ body {
     linear-gradient(180deg, #111C31 0%, #0F172A 48%);
 }
 
+/* Cross-device layout support */
+@media screen {
+  .receipt-form-card {
+    width: 100%;
+  }
+
+  .receipt-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .receipt-form-row {
+    min-width: 0;
+  }
+
+  .receipt-form-row > input,
+  .receipt-form-row > .receipt-dropdown {
+    min-width: 0;
+  }
+
+  .reports-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .whatsapp-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media screen and (max-width: 1180px) {
+  .whatsapp-layout,
+  .reports-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .page-header.flex {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-header > .flex,
+  .form-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .receipt-form-card {
+    padding: 18px !important;
+  }
+
+  .receipt-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .receipt-form-wide {
+    grid-column: auto !important;
+  }
+
+  .receipt-form-row {
+    align-items: stretch !important;
+    flex-direction: column;
+    gap: 7px !important;
+  }
+
+  .receipt-form-row > span {
+    white-space: normal !important;
+  }
+
+  .receipt-location-row > input {
+    width: 100% !important;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .table-wrap table {
+    min-width: 680px;
+  }
+
+  .btn:not(.btn-icon),
+  button:not(.receipt-dropdown-menu button) {
+    min-height: 44px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .page-content {
+    padding-inline: 12px;
+  }
+
+  .receipt-form-card {
+    padding: 14px !important;
+  }
+
+  input,
+  select,
+  textarea,
+  .receipt-dropdown-control {
+    font-size: 16px !important;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+  }
+}
+
 h1, h2, h3, h4, h5, h6,
 .page-header h1,
 .dashboard-hub-header h1,

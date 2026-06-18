@@ -78,7 +78,7 @@ function printGiveReceipt(data) {
         </tr>
         <tr style="background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
           <td style="padding:9px 10px;color:#555;text-align:right;vertical-align:top;">لە بڕی / وذلك عن :</td>
-          <td style="padding:9px 10px;text-align:center;line-height:1.7;"><div>${data.instead||'کرێی مولک'} ژماره (${data.apt})${data.location?' لە ('+data.location+')':''}</div><div>${period}</div></td>
+          <td style="padding:9px 10px;text-align:center;line-height:1.7;"><div>${data.instead||'کرێی مولک'} ژماره (${data.apt})${data.location?' لە ('+data.location+')':''}</div><div dir="ltr" style="direction:ltr;unicode-bidi:isolate;text-align:center;">${period}</div></td>
           <td style="padding:9px 10px;color:#555;text-align:left;direction:ltr;vertical-align:top;">For :</td>
         </tr>
         <tr style="background:transparent;">
@@ -366,7 +366,7 @@ export default function GiveReceipts({ mode = 'history' }) {
 
       {/* ══ NEW ══ */}
       {tab==='new' && (
-        <div style={{background:'var(--surface,#fff)',border:'1px solid #e2e8f0',borderRadius:12,padding:28,maxWidth:900}}>
+        <div className="receipt-form-card" style={{background:'var(--surface,#fff)',border:'1px solid #e2e8f0',borderRadius:12,padding:28,maxWidth:900}}>
 
           {/* Search — search paid payments by owner */}
           <div style={{marginBottom:24,position:'relative'}} ref={dropRef}>
@@ -393,16 +393,16 @@ export default function GiveReceipts({ mode = 'history' }) {
           </div>
 
           {/* Form */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'18px 40px'}}>
-            <div style={frow}><span style={lbl}>{tx.ownerName}:</span><input style={inp} value={form.ownerName} onChange={e=>setF('ownerName',e.target.value)} /></div>
-            <div style={frow}><span style={lbl}>{tx.amount}:</span><input style={inp} value={form.amount} onChange={e=>setF('amount',e.target.value)} placeholder="0" type="number" /></div>
-            <div style={frow}><span style={lbl}>{tx.paidBy}:</span><input style={{...inp,direction:'rtl'}} value={form.paidBy} onChange={e=>setF('paidBy',e.target.value)} /></div>
-            <div style={frow}><span style={lbl}>{tx.currency}:</span>
+          <div className="receipt-form-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'18px 40px'}}>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.ownerName}:</span><input style={inp} value={form.ownerName} onChange={e=>setF('ownerName',e.target.value)} /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.amount}:</span><input style={inp} value={form.amount} onChange={e=>setF('amount',e.target.value)} placeholder="0" type="number" /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.paidBy}:</span><input style={{...inp,direction:'rtl'}} value={form.paidBy} onChange={e=>setF('paidBy',e.target.value)} /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.currency}:</span>
               <ReceiptDropdown value={form.currency} options={CURRENCY_OPTIONS} onChange={value => setF('currency', value)} rtl={isRtl} />
             </div>
-            <div style={frow}><span style={lbl}>{tx.insteadOf}:</span><ReceiptDropdown value={form.instead} options={RECEIPT_REASONS} onChange={value => setF('instead', value)} rtl /><input style={{...inp,width:130}} value={form.month} onChange={e=>setF('month',e.target.value)} placeholder={tx.month} /></div>
-            <div style={frow}><span style={lbl}>{tx.location}:</span><input style={inp} value={form.location} onChange={e=>setF('location',e.target.value)} /><span style={{...lbl,marginInlineStart:8}}>{tx.apt}:</span><input style={{...inp,width:90}} value={form.apt} onChange={e=>setF('apt',e.target.value)} /></div>
-            <div style={{...frow,gridColumn:'1/-1'}}><span style={lbl}>{tx.note}:</span><input style={inp} value={form.notes} onChange={e=>setF('notes',e.target.value)} /></div>
+            <div className="receipt-form-row" style={frow}><span style={lbl}>{tx.insteadOf}:</span><ReceiptDropdown value={form.instead} options={RECEIPT_REASONS} onChange={value => setF('instead', value)} rtl /><input style={{...inp,width:130}} value={form.month} onChange={e=>setF('month',e.target.value)} placeholder={tx.month} /></div>
+            <div className="receipt-form-row receipt-location-row" style={frow}><span style={lbl}>{tx.location}:</span><input style={inp} value={form.location} onChange={e=>setF('location',e.target.value)} /><span style={{...lbl,marginInlineStart:8}}>{tx.apt}:</span><input style={{...inp,width:90}} value={form.apt} onChange={e=>setF('apt',e.target.value)} /></div>
+            <div className="receipt-form-row receipt-form-wide" style={{...frow,gridColumn:'1/-1'}}><span style={lbl}>{tx.note}:</span><input style={inp} value={form.notes} onChange={e=>setF('notes',e.target.value)} /></div>
           </div>
 
           {form.amount && (
