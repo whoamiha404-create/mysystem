@@ -14,7 +14,16 @@ async function request(method, url, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (res.status === 204) return null;
-  const data = await res.json();
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    if (res.status === 413) {
+      throw new Error('The file is too large. Please choose a smaller logo image.');
+    }
+    throw new Error(`Server returned an invalid response (${res.status}). Please try again.`);
+  }
   if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
   return data;
 }
@@ -24,7 +33,16 @@ async function uploadFile(url, formData) {
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(BASE + url, { method: 'POST', headers, body: formData });
-  const data = await res.json();
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    if (res.status === 413) {
+      throw new Error('The file is too large. Please choose a smaller image.');
+    }
+    throw new Error(`Server returned an invalid response (${res.status}). Please try again.`);
+  }
   if (!res.ok) throw new Error(data.error || `Upload failed: ${res.status}`);
   return data;
 }

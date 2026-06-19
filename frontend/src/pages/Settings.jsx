@@ -14,6 +14,8 @@ export default function Settings() {
   const [saving,   setSaving]   = useState(false);
   const toast = useToast();
   const logoStorageKey = 'rentpro_app_logo';
+  const maxLogoBytes = 850 * 1024;
+  const maxLogoSourceBytes = 20 * 1024 * 1024;
 
   useEffect(() => { api.getSettings().then(s=>{setSettings(s);setLoading(false);}); }, []);
   function set(k,v) { setSettings(s=>({...s,[k]:v})); }
@@ -27,7 +29,61 @@ export default function Settings() {
     }));
   }
 
-  function chooseLogo(event) {
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read image file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Could not process this image type'));
+      img.src = url;
+    });
+  }
+
+  async function compressLogo(file) {
+    const originalDataUrl = await readFileAsDataUrl(file);
+    const isVector = /image\/svg\+xml/i.test(file.type) || /\.svg$/i.test(file.name);
+    if (isVector || originalDataUrl.length <= maxLogoBytes) return originalDataUrl;
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const img = await loadImage(objectUrl);
+      const maxSize = 640;
+      const scale = Math.min(1, maxSize / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+      canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+      const ctx = canvas.getContext('2d', { alpha: true });
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const formats = [
+        ['image/webp', 0.86],
+        ['image/png', 0.92],
+        ['image/jpeg', 0.86],
+      ];
+      let best = originalDataUrl;
+      for (const [type, quality] of formats) {
+        const dataUrl = canvas.toDataURL(type, quality);
+        if (!best || dataUrl.length < best.length) best = dataUrl;
+        if (dataUrl.length <= maxLogoBytes) return dataUrl;
+      }
+      return best;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  async function chooseLogo(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     const isSupportedImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg|bmp|avif|heic|heif|ico)$/i.test(file.name);
@@ -35,18 +91,27 @@ export default function Settings() {
       toast('Image only', 'error');
       return;
     }
-    if (file.size > 15 * 1024 * 1024) {
-      toast('Logo image must be under 15MB', 'error');
+    if (file.size > maxLogoSourceBytes) {
+      toast('Logo image must be under 20MB', 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const nextLogo = reader.result;
+    setSaving('logo');
+    try {
+      const nextLogo = await compressLogo(file);
+      if (nextLogo.length > maxLogoBytes * 1.6) {
+        toast('Logo image is still too large. Please choose a smaller image.', 'error');
+        return;
+      }
       const nextSettings = { ...settings, appLogo: nextLogo };
       setSettings(nextSettings);
       syncLogo(nextLogo, nextSettings);
-    };
-    reader.readAsDataURL(file);
+      toast('Logo ready. Click Save Settings to store it.', 'success');
+    } catch (error) {
+      toast(error.message || 'Could not process logo image', 'error');
+    } finally {
+      setSaving(false);
+      event.target.value = '';
+    }
   }
 
   async function saveGeneral() {
