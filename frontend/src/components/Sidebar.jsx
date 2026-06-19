@@ -54,7 +54,11 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
 
   useEffect(() => {
     let alive = true;
-    const loadSettings = () => {
+    const loadSettings = (event) => {
+      if (event?.detail) {
+        setSettings(current => ({ ...current, ...event.detail }));
+        return;
+      }
       api.getSettings().then(data => {
         if (alive) setSettings(data || {});
       }).catch(() => {});
@@ -198,7 +202,7 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
   return (
     <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-logo_sidabar">
-        <div className={`sidebar-logo-icon_siddar ${settings.appLogo ? '' : 'is-empty'}`}>
+        <div className={`sidebar-logo-icon_siddar ${settings.appLogo ? 'has-logo sidebar-logo-motion' : 'is-empty'}`}>
           {settings.appLogo && <img src={settings.appLogo} alt={companyName || 'Company logo'} />}
         </div>
         <div className="sidebar-logo-text">

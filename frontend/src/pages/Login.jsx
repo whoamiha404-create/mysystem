@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, BarChart3, CreditCard, Lock, MessageCircle, Palette, UsersRound, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -15,10 +15,29 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [brandLogo, setBrandLogo] = useState(() => {
+    try {
+      return localStorage.getItem('rentpro_app_logo') || logo;
+    } catch {
+      return logo;
+    }
+  });
   const { login } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { isDark, toggle } = useTheme();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const syncLogo = () => {
+      try {
+        setBrandLogo(localStorage.getItem('rentpro_app_logo') || logo);
+      } catch {
+        setBrandLogo(logo);
+      }
+    };
+    window.addEventListener('rentpro-settings-updated', syncLogo);
+    return () => window.removeEventListener('rentpro-settings-updated', syncLogo);
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -44,8 +63,8 @@ export default function Login() {
     <div className="login-page">
       <div className="login-left">
         <div className="login-brand">
-          <div className="sidebar-logo-icon">
-            <img src={logo} alt="Hope Zone Logo" />
+          <div className="sidebar-logo-icon login-logo-motion">
+            <img src={brandLogo} alt="Company Logo" />
           </div>
           <div>
             <div className="login-brand-name">HOPE ZONE</div>

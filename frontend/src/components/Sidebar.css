@@ -35,8 +35,43 @@
   border:1px dashed rgba(255,255,255,0.14);
 }
 .sidebar-logo-icon_siddar img { width:45px; height:45px; object-fit:contain; margin:0; }
+.sidebar-logo-motion {
+  position: relative;
+  overflow: hidden;
+  animation: sidebarLogoFloat 5.2s ease-in-out 800ms infinite;
+}
+.sidebar-logo-motion::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.34) 44%, transparent 58%);
+  transform: translateX(-145%);
+  animation: sidebarLogoShine 3s 650ms ease-in-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.sidebar-logo-motion img {
+  position: relative;
+  z-index: 1;
+  animation: sidebarLogoGlow 3.4s ease-in-out infinite;
+}
 .sidebar-logo-name { font-size:18px; font-weight:800; color:#fff; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px; }
 .sidebar-logo-sub { font-size:12px; color:rgba(231,238,250,0.58); }
+
+@keyframes sidebarLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes sidebarLogoShine {
+  0% { transform: translateX(-145%); }
+  34%, 100% { transform: translateX(145%); }
+}
+
+@keyframes sidebarLogoGlow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(228, 189, 57, 0)); }
+  50% { filter: drop-shadow(0 8px 14px rgba(228, 189, 57, 0.18)); }
+}
 
 .sidebar-nav { flex:1; padding:16px 12px; overflow-y:auto; }
 .sidebar-section-label { font-size:10px; font-weight:800; color:rgba(231,238,250,0.36); text-transform:uppercase; letter-spacing:1px; padding:0 10px; margin-bottom:6px; }
@@ -332,4 +367,12 @@
   border-radius: 10px;
   background: rgba(148, 163, 184, 0.1);
   color: #CBD5E1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-logo-motion,
+  .sidebar-logo-motion::after,
+  .sidebar-logo-motion img {
+    animation: none !important;
+  }
 }

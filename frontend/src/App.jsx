@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider }         from './context/ToastContext';
 import { ThemeProvider }         from './context/ThemeContext';
 import { LanguageProvider }      from './context/LanguageContext';
+import api from './api/client';
+import fallbackLogo from './hopezone.png';
 import Layout    from './components/Layout';
 import ThemePicker from './components/ThemePicker';
 import Login     from './pages/Login';
@@ -28,13 +30,78 @@ import Ankets       from './pages/Ankets';
 import './styles/globals.css';
 import './pages/Payments.css';
 
-function Protected({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', fontSize:32 }}>
-      <Loader2 className="animate-spin" size={32} />
+const LOGO_STORAGE_KEY = 'rentpro_app_logo';
+
+function readStoredLogo() {
+  try {
+    return localStorage.getItem(LOGO_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function LogoSplash({ logo }) {
+  const splashLogo = logo || readStoredLogo() || fallbackLogo;
+  return (
+    <div className="logo-splash" role="status" aria-label="Loading Hope Zone">
+      <div className="logo-splash-card">
+        <div className="logo-splash-image-wrap">
+          <img src={splashLogo} alt="Company logo" className="logo-splash-image" />
+        </div>
+        <div className="logo-splash-loader" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
     </div>
   );
+}
+
+function StartupSplash() {
+  const { user } = useAuth();
+  const [show, setShow] = useState(true);
+  const [logo, setLogo] = useState(() => readStoredLogo());
+
+  useEffect(() => {
+    const syncStoredLogo = () => setLogo(readStoredLogo());
+    window.addEventListener('rentpro-settings-updated', syncStoredLogo);
+    return () => window.removeEventListener('rentpro-settings-updated', syncStoredLogo);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let alive = true;
+    api.getSettings()
+      .then(settings => {
+        if (!alive) return;
+        const nextLogo = settings?.appLogo || '';
+        setLogo(nextLogo);
+        try {
+          if (nextLogo) localStorage.setItem(LOGO_STORAGE_KEY, nextLogo);
+          else localStorage.removeItem(LOGO_STORAGE_KEY);
+        } catch {}
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [user]);
+
+  useEffect(() => {
+    if (!show) return undefined;
+    const timer = setTimeout(() => setShow(false), 1550);
+    return () => clearTimeout(timer);
+  }, [show]);
+
+  return show ? (
+    <div className="logo-splash-overlay" aria-hidden="true">
+      <LogoSplash logo={logo} />
+    </div>
+  ) : null;
+}
+
+function Protected({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LogoSplash />;
   return user ? children : <Navigate to="/login" replace />;
 }
 
@@ -65,6 +132,7 @@ function App() {
         <AuthProvider>
           <ToastProvider>
             <ThemePicker />
+            <StartupSplash />
             <BrowserRouter>
               <Routes>
                 <Route path="/login" element={<Login />} />

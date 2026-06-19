@@ -13,9 +13,19 @@ export default function Settings() {
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
   const toast = useToast();
+  const logoStorageKey = 'rentpro_app_logo';
 
   useEffect(() => { api.getSettings().then(s=>{setSettings(s);setLoading(false);}); }, []);
   function set(k,v) { setSettings(s=>({...s,[k]:v})); }
+  function syncLogo(value, nextSettings = null) {
+    try {
+      if (value) localStorage.setItem(logoStorageKey, value);
+      else localStorage.removeItem(logoStorageKey);
+    } catch {}
+    window.dispatchEvent(new CustomEvent('rentpro-settings-updated', {
+      detail: nextSettings ? { ...nextSettings, appLogo: value || '' } : { appLogo: value || '' },
+    }));
+  }
 
   function chooseLogo(event) {
     const file = event.target.files?.[0];
@@ -30,15 +40,22 @@ export default function Settings() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => set('appLogo', reader.result);
+    reader.onload = () => {
+      const nextLogo = reader.result;
+      const nextSettings = { ...settings, appLogo: nextLogo };
+      setSettings(nextSettings);
+      syncLogo(nextLogo, nextSettings);
+    };
     reader.readAsDataURL(file);
   }
 
   async function saveGeneral() {
     setSaving('general');
     try {
-      await api.saveSettings(settings);
-      window.dispatchEvent(new Event('rentpro-settings-updated'));
+      const saved = await api.saveSettings(settings);
+      const nextSettings = saved || settings;
+      setSettings(nextSettings);
+      syncLogo(nextSettings.appLogo || '', nextSettings);
       toast(t('saveSettings')+' ','success');
     }
     catch(e) { toast(e.message,'error'); } finally { setSaving(false); }
@@ -82,7 +99,11 @@ export default function Settings() {
                     <input type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.svg,.bmp,.avif,.heic,.heif,.ico" onChange={chooseLogo} style={{display:'none'}} />
                   </label>
                   {settings.appLogo && (
-                    <button type="button" className="btn btn-ghost" onClick={() => set('appLogo', '')}>{t('removeLogo')}</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => {
+                      const nextSettings = { ...settings, appLogo: '' };
+                      setSettings(nextSettings);
+                      syncLogo('', nextSettings);
+                    }}>{t('removeLogo')}</button>
                   )}
                 </div>
               </div>
