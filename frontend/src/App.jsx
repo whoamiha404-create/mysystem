@@ -17,6 +17,7 @@ import Payments  from './pages/Payments';
 import RenewRentContracts from './pages/RenewRentContracts';
 import Notifications from './pages/Notifications';
 import Profit from './pages/Profit';
+import Maps from './pages/Maps';
 import Expenses  from './pages/Expenses';
 import Reports   from './pages/Reports';
 import AgentReports from './pages/AgentReports';
@@ -150,6 +151,7 @@ function App() {
                   <Route path="renew-rent-contracts" element={<OperationalOnly><RenewRentContracts /></OperationalOnly>} />
                   <Route path="notifications" element={<OperationalOnly><Notifications /></OperationalOnly>} />
                   <Route path="profit" element={<OperationalOnly><Profit /></OperationalOnly>} />
+                  <Route path="maps" element={<OperationalOnly><Maps /></OperationalOnly>} />
                   <Route path="expenses"   element={<OperationalOnly><Expenses /></OperationalOnly>}  />
                   <Route path="reports"    element={<OperationalOnly><Reports /></OperationalOnly>}   />
                   <Route path="agent-reports" element={<AdminOnly><AgentReports /></AdminOnly>} />

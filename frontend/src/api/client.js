@@ -83,6 +83,11 @@ const api = {
   getSettings:   ()            => request('GET',  '/settings'),
   saveSettings:  (data)        => request('PUT',  '/settings',        data),
 
+  // Maps
+  getMaps:       ()            => request('GET',  '/maps'),
+  uploadMap:     (formData)    => uploadFile('/maps', formData),
+  deleteMap:     (id)          => request('DELETE', `/maps/${id}`),
+
   // WhatsApp
   waStatus:      ()                       => request('GET',  '/whatsapp/status'),
   waSend:        (phone, msg, img)        => request('POST', '/whatsapp/send',   { phone, message: msg, withImage: img }),

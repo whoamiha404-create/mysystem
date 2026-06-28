@@ -11,6 +11,7 @@ import {
   HandCoins,
   Home,
   LogOut,
+  MapPinned,
   MessageCircle,
   Package,
   Palette,
@@ -152,6 +153,7 @@ export default function Sidebar({ waState, mobileOpen = false, onNavigate = () =
     { to:'/dashboard', icon:BarChart3, key:'dashboard' },
     { to:'/tenants', icon:UserRound, key:'tenants' },
     { to:'/payments', icon:CreditCard, key:'payments' },
+    { to:'/maps', icon:MapPinned, key:'maps' },
   ];
   const afterDropdownNav = [
     { to:'/notifications', icon:Bell, key:'notifications', badge: unreadNotifications },

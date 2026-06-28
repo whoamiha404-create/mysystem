@@ -169,6 +169,18 @@ db.exec(`
     reviewed_at   TEXT DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS maps (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name          TEXT NOT NULL,
+    file_name     TEXT NOT NULL,
+    original_name TEXT DEFAULT '',
+    mime_type     TEXT DEFAULT '',
+    file_size     INTEGER NOT NULL DEFAULT 0,
+    url           TEXT NOT NULL,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 function ensureColumn(table, column, definition) {
@@ -187,6 +199,10 @@ ensureColumn('contracts', 'user_id', 'INTEGER');
 ensureColumn('logs', 'user_id', 'INTEGER');
 ensureColumn('users', 'created_by', 'INTEGER');
 ensureColumn('change_requests', 'owner_id', 'INTEGER');
+ensureColumn('maps', 'user_id', 'INTEGER');
+ensureColumn('maps', 'original_name', "TEXT DEFAULT ''");
+ensureColumn('maps', 'mime_type', "TEXT DEFAULT ''");
+ensureColumn('maps', 'file_size', 'INTEGER NOT NULL DEFAULT 0');
 
 // ── Seed default settings ────────────────────────────────────────────
 function setSetting(key, value) {

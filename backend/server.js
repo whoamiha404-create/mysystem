@@ -14,6 +14,7 @@ const RENEWAL_DEFAULT_MESSAGE = `سڵاو {{name}}، بەرواری نوێکرد
 
 app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '30mb' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/tenants', require('./routes/tenants'));
@@ -28,6 +29,7 @@ app.use('/api/logs', require('./routes/logs'));
 app.use('/api/notifications', notificationsRoute);
 app.use('/api/profits', require('./routes/profits'));
 app.use('/api/change-requests', require('./routes/changeRequests').router);
+app.use('/api/maps', require('./routes/maps'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 

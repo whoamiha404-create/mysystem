@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Info, Loader2, Palette } from 'lucide-react';
+import { FileText, Image as ImageIcon, Info, Loader2, MapPinned, Palette, Trash2, Upload } from 'lucide-react';
 import api from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -9,6 +9,8 @@ export default function Settings() {
   const { t } = useLanguage();
   const { isDark, toggle } = useTheme();
   const [settings, setSettings] = useState({});
+  const [maps, setMaps] = useState([]);
+  const [mapForm, setMapForm] = useState({ name: '', file: null });
   const [pass,     setPass]     = useState({ current:'', newPass:'', newUser:'' });
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
@@ -17,7 +19,21 @@ export default function Settings() {
   const maxLogoBytes = 850 * 1024;
   const maxLogoSourceBytes = 20 * 1024 * 1024;
 
-  useEffect(() => { api.getSettings().then(s=>{setSettings(s);setLoading(false);}); }, []);
+  useEffect(() => {
+    let alive = true;
+    Promise.all([
+      api.getSettings(),
+      api.getMaps().catch(() => []),
+    ]).then(([s, mapRows]) => {
+      if (!alive) return;
+      setSettings(s);
+      setMaps(Array.isArray(mapRows) ? mapRows : []);
+      setLoading(false);
+    }).catch(() => {
+      if (alive) setLoading(false);
+    });
+    return () => { alive = false; };
+  }, []);
   function set(k,v) { setSettings(s=>({...s,[k]:v})); }
   function syncLogo(value, nextSettings = null) {
     try {
@@ -136,6 +152,54 @@ export default function Settings() {
     } catch(e) { toast(e.message,'error'); } finally { setSaving(false); }
   }
 
+  async function uploadMap(event) {
+    event.preventDefault();
+    const name = mapForm.name.trim();
+    if (!name) {
+      toast(t('mapName') + ' required', 'error');
+      return;
+    }
+    if (!mapForm.file) {
+      toast(t('chooseMapFile'), 'error');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('map', mapForm.file);
+    setSaving('map');
+    try {
+      const row = await api.uploadMap(formData);
+      setMaps(current => [row, ...current]);
+      setMapForm({ name: '', file: null });
+      toast(t('mapUploaded'), 'success');
+      event.target.reset();
+    } catch (error) {
+      toast(error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteMap(map) {
+    if (!window.confirm(t('confirmDelete'))) return;
+    setSaving(`map-${map.id}`);
+    try {
+      await api.deleteMap(map.id);
+      setMaps(current => current.filter(row => row.id !== map.id));
+      toast(t('delete') + ' ', 'success');
+    } catch (error) {
+      toast(error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function mapIcon(map) {
+    return map?.mime_type === 'application/pdf' || /\.pdf$/i.test(map?.original_name || map?.url || '')
+      ? <FileText size={18} />
+      : <ImageIcon size={18} />;
+  }
+
   if (loading) return <div className="empty-state"><Loader2 className="animate-spin" size={32} /></div>;
 
   return (
@@ -220,6 +284,55 @@ export default function Settings() {
               <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
                 <button className="btn btn-primary" onClick={savePassword} disabled={saving==='pass'}>{saving==='pass'?'...':t('updateCredentials')}</button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Maps */}
+        <div className="card" style={{gridColumn:'1/-1'}}>
+          <div className="card-header">
+            <h3 style={{display:'flex',alignItems:'center',gap:10}}><MapPinned size={20} /> {t('mapLibrary')}</h3>
+          </div>
+          <div className="card-body">
+            <form onSubmit={uploadMap} className="form-grid" style={{gridTemplateColumns:'1fr 1fr auto',alignItems:'end'}}>
+              <div className="form-group">
+                <label>{t('mapName')}</label>
+                <input value={mapForm.name} onChange={e=>setMapForm(m=>({...m,name:e.target.value}))} placeholder={t('mapNamePlaceholder')} />
+              </div>
+              <div className="form-group">
+                <label>{t('mapFile')}</label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.heic,.heif,.tif,.tiff"
+                  onChange={e=>setMapForm(m=>({...m,file:e.target.files?.[0] || null}))}
+                />
+              </div>
+              <button className="btn btn-primary" type="submit" disabled={saving==='map'}>
+                {saving==='map' ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {t('uploadMap')}
+              </button>
+            </form>
+
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:12,marginTop:18}}>
+              {maps.length ? maps.map(map => (
+                <div key={map.id} style={{display:'flex',alignItems:'center',gap:12,border:'1px solid var(--border)',borderRadius:14,padding:12,background:'var(--surface)'}}>
+                  <span style={{width:38,height:38,borderRadius:12,display:'inline-flex',alignItems:'center',justifyContent:'center',background:'var(--primary-light)',color:'var(--primary)'}}>
+                    {mapIcon(map)}
+                  </span>
+                  <div style={{minWidth:0,flex:1}}>
+                    <strong style={{display:'block',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{map.name}</strong>
+                    <small style={{display:'block',color:'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{map.original_name || map.file_name}</small>
+                  </div>
+                  <button type="button" className="btn btn-icon btn-danger" onClick={()=>deleteMap(map)} disabled={saving===`map-${map.id}`} title={t('deleteMap')}>
+                    {saving===`map-${map.id}` ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                  </button>
+                </div>
+              )) : (
+                <div className="empty-state" style={{gridColumn:'1/-1',minHeight:120}}>
+                  <MapPinned size={34} />
+                  <strong>{t('noMaps')}</strong>
+                </div>
+              )}
             </div>
           </div>
         </div>
