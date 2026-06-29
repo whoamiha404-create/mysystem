@@ -6,6 +6,8 @@ const { db, getSettings, addLog } = require('../db/database');
 const wa      = require('../services/whatsapp');
 const auth    = require('../middleware/auth');
 
+const maxTemplateImageBytes = Number(process.env.WHATSAPP_IMAGE_LIMIT_MB || 25) * 1024 * 1024;
+
 const RENEWAL_DEFAULT_MESSAGE = `سڵاو {{name}}، بەرواری نوێکردنەوەی گرێبەستی کرێ بۆ {{apt}} نزیکە. کۆتایی گرێبەست: {{contractEnd}} ({{days}} ڕۆژ ماوە). تکایە بۆ نوێکردنەوە و پارەدانی تێچووی نوێکردنەوە/باج سەردانمان بکە. {{company}}`;
 
 function startOfDay(date = new Date()) {
@@ -56,7 +58,7 @@ const storage = multer.diskStorage({
     const uploadsDir = wa.uploadDirFor(req.user.id);
     const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
     // Delete old image first
-    for (const e of ['jpg','jpeg','png','webp']) {
+    for (const e of ['jpg','jpeg','png','webp','gif','bmp','avif','heic','heif']) {
       const old = path.join(uploadsDir, 'wa-template-image.' + e);
       if (fs.existsSync(old)) fs.unlinkSync(old);
     }
@@ -65,7 +67,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: maxTemplateImageBytes },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only images allowed'));
@@ -86,15 +88,24 @@ router.get('/image', auth, (req, res) => {
 });
 
 // POST /api/whatsapp/image — upload template image
-router.post('/image', auth, upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
-  res.json({ ok: true, filename: req.file.filename });
+router.post('/image', auth, (req, res) => {
+  upload.single('image')(req, res, (error) => {
+    if (error) {
+      const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+      const message = error.code === 'LIMIT_FILE_SIZE'
+        ? `Template image is too large. Maximum size is ${Math.round(maxTemplateImageBytes / 1024 / 1024)}MB.`
+        : error.message;
+      return res.status(status).json({ error: message });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    res.json({ ok: true, filename: req.file.filename });
+  });
 });
 
 // DELETE /api/whatsapp/image — remove template image
 router.delete('/image', auth, (req, res) => {
   const uploadsDir = wa.uploadDirFor(req.user.id);
-  for (const e of ['jpg','jpeg','png','webp']) {
+  for (const e of ['jpg','jpeg','png','webp','gif','bmp','avif','heic','heif']) {
     const p = path.join(uploadsDir, 'wa-template-image.' + e);
     if (fs.existsSync(p)) fs.unlinkSync(p);
   }

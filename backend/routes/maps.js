@@ -6,7 +6,7 @@ const { db } = require('../db/database');
 const auth = require('../middleware/auth');
 
 const mapsRoot = path.join(__dirname, '..', 'uploads', 'maps');
-const maxMapBytes = Number(process.env.MAP_UPLOAD_LIMIT_MB || 50) * 1024 * 1024;
+const maxMapBytes = Number(process.env.MAP_UPLOAD_LIMIT_MB || 200) * 1024 * 1024;
 
 function safeName(value) {
   return String(value || 'map')
@@ -71,7 +71,10 @@ router.post('/', auth, (req, res) => {
   upload.single('map')(req, res, (error) => {
     if (error) {
       const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
-      return res.status(status).json({ error: error.message });
+      const message = error.code === 'LIMIT_FILE_SIZE'
+        ? `Map file is too large. Maximum size is ${Math.round(maxMapBytes / 1024 / 1024)}MB.`
+        : error.message;
+      return res.status(status).json({ error: message });
     }
     if (!req.file) return res.status(400).json({ error: 'No map file uploaded' });
     const name = String(req.body.name || '').trim();
